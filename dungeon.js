@@ -29,7 +29,7 @@
 		// Add paths to grid
 		for(var i=0;i<paths.length;i++){
 			for(var j=0;j<paths[i].length;j++){
-				for(var k=0;Math.abs(k)<Math.abs(paths[i][j].distance);k+=paths[i][j].distance/Math.abs(paths[i][j].distance)){
+				for(var k=0;Math.abs(k)<=Math.abs(paths[i][j].distance);k+=paths[i][j].distance/Math.abs(paths[i][j].distance)){
 					if(paths[i][j].direction)
 						dungeon[0][paths[i][j].startX][paths[i][j].startY + k] = 3;
 					else

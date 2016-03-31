@@ -14,11 +14,6 @@ Konva.Sprite.prototype.getHeight = function(){
 // Create the basic grid with the player after the page has loaded
 document.addEventListener('DOMContentLoaded', function() {
 	
-	// Set all keys to false
-	keys = [];
-	for(var i=0;i<=222;i++)
-		keys[i] = false;
-	
 	// Create the stage and layers
 	dungeonStage = new Konva.Stage({
 	  container: 'grid',
@@ -42,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     					case 0: // nothing = roof tile
     						addTile(parallaxLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						if(y>0 && dungeon[0][x][y-1]!=0)
-    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
+    							addTileTopHalf(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
     					case 1: // wall tile
     						addTile(dungeonLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, function(x, y){return x>=0 && y>=0 && x<dungeon[0].length && y<dungeon[0][x].length && dungeon[0][x][y]==1;}, false);
@@ -50,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
     							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
     					case 2: // room tile
-    						console.log(x+":"+y);
     						addTile(dungeonLayer, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==2;}, true);
     						break;
     					case 3: // path tile
@@ -175,6 +169,27 @@ function addTile(layer, position, tilePosition, tileSheet, tester, corners){
 	}));
 }
 
+// Gets and adds the top half of the tile at the given position with the given variable
+function addTileTopHalf(layer, position, tilePosition, tileSheet, tester, corners){
+	var subTiles = getSubTiles(position, tilePosition, tester, corners);
+	layer.add(new Konva.Image({
+		x: position.x*scale,
+		y: position.y*scale+scale/2,
+		image: tileSheet,
+		crop: {x:subTiles.topLeft.x,y:subTiles.topLeft.y,width:16,height:16},
+		width: scale/2,
+		height: scale/2
+	}));
+	layer.add(new Konva.Image({
+		x: position.x*scale+scale/2,
+		y: position.y*scale+scale/2,
+		image: tileSheet,
+		crop: {x:subTiles.topRight.x,y:subTiles.topRight.y,width:16,height:16},
+		width: scale/2,
+		height: scale/2
+	}));
+}
+
 // Gets the relative position of the subtiles of a tile using autotile
 function getSubTiles(pos, tilePos, tester, corners){
 	var subTiles = {topLeft: {x:tilePos.x, y:tilePos.y}, topRight: {x:tilePos.x, y:tilePos.y}, bottomLeft: {x:tilePos.x, y:tilePos.y}, bottomRight: {x:tilePos.x, y:tilePos.y}};
@@ -246,7 +261,9 @@ function loadGame(){
 	if(!gameLoaded)
 		gameLoaded = true;
 	else{
+		loadAnimations();
 		updateViewport();
+		updateServer();
 		dungeonStage.add(dungeonLayer, characterLayer, parallaxLayer);
 	}
 }
