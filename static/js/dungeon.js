@@ -1,4 +1,4 @@
-var dungeonStage, dungeonLayer, characterLayer, parallaxLayer, player, gameLoaded = false;
+var dungeonStage, dungeonLayer, characterLayer, parallaxLayer, player, gameLoaded = false, loadingStage;
 var scale=32;
 
 // Gets a sprite's current width
@@ -14,12 +14,27 @@ Konva.Sprite.prototype.getHeight = function(){
 // Create the basic grid with the player after the page has loaded
 document.addEventListener('DOMContentLoaded', function() {
 	
-	// Create the stage and layers
-	dungeonStage = new Konva.Stage({
-	  container: 'grid',
-	  width: dungeon[0].length*scale,
-	  height: dungeon[0][0].length*scale
+	// Create loading message
+	loadingStage = new Konva.Stage({
+		container: 'grid',
+		width: document.getElementById('viewport').clientWidth,
+		height: document.getElementById('viewport').clientHeight
 	});
+	var loadingLayer = new Konva.Layer();
+	var loadingText = new Konva.Text({
+      x: loadingStage.getWidth() / 2,
+      y: loadingStage.getHeight() / 2,
+      text: 'Loading...',
+      fontSize: 30,
+      fontFamily: 'Calibri',
+      fill: 'white'
+    });
+    loadingText.x((loadingStage.getWidth()-loadingText.getTextWidth())/2);
+    loadingText.y((loadingStage.getHeight()-loadingText.getTextHeight())/2);
+    loadingLayer.add(loadingText);
+    loadingStage.add(loadingLayer);
+	
+	// Create the dungeon layers
 	dungeonLayer = new Konva.Layer();
 	characterLayer = new Konva.Layer();
 	parallaxLayer = new Konva.Layer();
@@ -240,10 +255,23 @@ function loadGame(){
 	if(!gameLoaded)
 		gameLoaded = true;
 	else{
+		
+		// Stop the loading screen
+		loadingStage.destroyChildren();
+		loadingStage.destroy();
+		
+		// Create the stage and add all the layers
+		dungeonStage = new Konva.Stage({
+		  container: 'grid',
+		  width: dungeon[0].length*scale,
+		  height: dungeon[0][0].length*scale
+		});
+		dungeonStage.add(dungeonLayer, characterLayer, parallaxLayer);
+		
+		// Load the animations, viewport, and server at the last step
 		loadAnimations();
 		updateViewport();
 		updateServer();
-		dungeonStage.add(dungeonLayer, characterLayer, parallaxLayer);
 	}
 }
 
