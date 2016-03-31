@@ -1,12 +1,14 @@
-var multiplayerSocket, players = {};
+var multiplayerSocket, players = {}, connected = false;
 
 document.addEventListener('DOMContentLoaded', function() {
 	multiplayerSocket = new WebSocket("ws:"+document.location.hostname+":"+document.location.port);
 	multiplayerSocket.onmessage = serverUpdate;
+	multiplayerSocket.onopen = function(event) { connected = true; };
 });
 
 function updateServer(){
-	multiplayerSocket.send(JSON.stringify({x:player.x(), y:player.y(), dir:DIRECTIONS.indexOf(player.animation().substr(4, player.animation().length)), move:player.animation().startsWith('move')}));
+	if(connected)
+		multiplayerSocket.send(JSON.stringify({x:player.x(), y:player.y(), dir:DIRECTIONS.indexOf(player.animation().substr(4, player.animation().length)), move:player.animation().startsWith('move')}));
 }
 
 function serverUpdate(event){
