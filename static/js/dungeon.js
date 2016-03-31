@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Create the stage and layers
 	dungeonStage = new Konva.Stage({
 	  container: 'grid',
-	  width: dungeon.length*scale,
-	  height: dungeon[0].length*scale
+	  width: dungeon[0].length*scale,
+	  height: dungeon[0][0].length*scale
 	});
 	dungeonLayer = new Konva.Layer();
 	characterLayer = new Konva.Layer();
@@ -36,24 +36,25 @@ document.addEventListener('DOMContentLoaded', function() {
 		wallTileSheet.onload = function() {
     	
     		// Draw the tiles in the grid
-    		for(var x=0;x<dungeon.length;x++){
-    			for(var y=0;y<dungeon[x].length;y++){
-    				switch(dungeon[x][y]){
-    					case -1: // nothing = roof tile
-    						addTile(parallaxLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon.length || y>=dungeon[x].length || dungeon[x][y]==-1 || dungeon[x][y+1]<=0;}, true);
-    						if(dungeon[x][y-1]!=-1)
-    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon.length || y>=dungeon[x].length || dungeon[x][y]==-1 || dungeon[x][y+1]<=0;}, true);
+    		for(var x=0;x<dungeon[0].length;x++){
+    			for(var y=0;y<dungeon[0][x].length;y++){
+    				switch(dungeon[0][x][y]){
+    					case 0: // nothing = roof tile
+    						addTile(parallaxLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
+    						if(y>0 && dungeon[0][x][y-1]!=0)
+    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
-    					case 0: // wall tile
-    						addTile(dungeonLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, function(x, y){return x>=0 && y>=0 && x<dungeon.length && y<dungeon[x].length && dungeon[x][y]==0;}, false);
-    						if(dungeon[x][y-1]!=-1)
-    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon.length || y>=dungeon[x].length || dungeon[x][y]==-1 || dungeon[x][y+1]<=0;}, true);
+    					case 1: // wall tile
+    						addTile(dungeonLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, function(x, y){return x>=0 && y>=0 && x<dungeon[0].length && y<dungeon[0][x].length && dungeon[0][x][y]==1;}, false);
+    						if(y>0 && dungeon[0][x][y-1]!=0)
+    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
-    					case 1: // room tile
-    						addTile(dungeonLayer, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, function(x, y){return dungeon[x][y]==1;}, true);
+    					case 2: // room tile
+    						console.log(x+":"+y);
+    						addTile(dungeonLayer, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==2;}, true);
     						break;
-    					case 2: // path tile
-    						addTile(dungeonLayer, {x:x,y:y}, {x:pathTile.x*64, y:pathTile.y*96}, floorTileSheet, function(x, y){return dungeon[x][y]==2;}, true);
+    					case 3: // path tile
+    						addTile(dungeonLayer, {x:x,y:y}, {x:pathTile.x*64, y:pathTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==3;}, true);
     						break;
     				}
     			}
@@ -72,9 +73,14 @@ document.addEventListener('DOMContentLoaded', function() {
     playerImg.onload = function() {
 
 	  // Actually create the player's sprite with animations
+	  var start = {};
+	  for(var x=0;x<dungeon[1].length;x++)
+	  	  for(var y=0;y<dungeon[1][x].length;y++)
+	  	  	if(dungeon[1][x][y]==1)
+				start = {x:x, y:y};
       player = new Konva.Sprite({
-        x: xPos*scale,
-        y: yPos*scale,
+        x: start.x*scale,
+        y: start.y*scale,
         image: playerImg,
         animation: 'idleDown',
         animations: {
@@ -117,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				    },
         frameRate: 10,
         frameIndex: 0,
-		          scale: { x:scale/48, y:scale/48 }
+		scale: { x:scale/48, y:scale/48 }
       });
       
       // add the shape to the layer
@@ -130,7 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	  updateViewport();
     };
     playerImg.src = 'images/placeholder_player.png';
-	
 }, false);
 
 // Gets and adds the tile at the given position with the given variables
@@ -252,10 +257,10 @@ function move(sprite, dir, distance) {
 	var y = dir==0 ? distance : (dir==3 ? -distance : 0);
 	sprite.x(sprite.x()+x);
 	sprite.y(sprite.y()+y);
-	if(dungeon[Math.trunc(sprite.x()/scale)][Math.trunc((sprite.y()+sprite.getHeight()/2)/scale)]<=0 || 
-		dungeon[Math.trunc((sprite.x()+sprite.getWidth())/scale)][Math.trunc((sprite.y()+sprite.getHeight()/2)/scale)]<=0 ||
-		dungeon[Math.trunc(sprite.x()/scale)][Math.trunc((sprite.y()+sprite.getHeight())/scale)]<=0 ||
-		dungeon[Math.trunc((sprite.x()+sprite.getWidth())/scale)][Math.trunc((sprite.y()+sprite.getHeight())/scale)]<=0){
+	if(dungeon[0][Math.trunc(sprite.x()/scale)][Math.trunc((sprite.y()+sprite.getHeight()/2)/scale)]<=1 || 
+		dungeon[0][Math.trunc((sprite.x()+sprite.getWidth())/scale)][Math.trunc((sprite.y()+sprite.getHeight()/2)/scale)]<=1 ||
+		dungeon[0][Math.trunc(sprite.x()/scale)][Math.trunc((sprite.y()+sprite.getHeight())/scale)]<=1 ||
+		dungeon[0][Math.trunc((sprite.x()+sprite.getWidth())/scale)][Math.trunc((sprite.y()+sprite.getHeight())/scale)]<=1){
 		found = true;
 		sprite.x(sprite.x()-x);
 		sprite.y(sprite.y()-y);
