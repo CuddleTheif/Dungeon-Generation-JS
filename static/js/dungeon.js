@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
     					case 0: // nothing = roof tile
     						addTile(parallaxLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						if(y>0 && dungeon[0][x][y-1]!=0)
-    							addTileTopHalf(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
+    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
     					case 1: // wall tile
     						addTile(dungeonLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, function(x, y){return x>=0 && y>=0 && x<dungeon[0].length && y<dungeon[0][x].length && dungeon[0][x][y]==1;}, false);
@@ -164,27 +164,6 @@ function addTile(layer, position, tilePosition, tileSheet, tester, corners){
 		y: position.y*scale+scale/2,
 		image: tileSheet,
 		crop: {x:subTiles.bottomRight.x,y:subTiles.bottomRight.y,width:16,height:16},
-		width: scale/2,
-		height: scale/2
-	}));
-}
-
-// Gets and adds the top half of the tile at the given position with the given variable
-function addTileTopHalf(layer, position, tilePosition, tileSheet, tester, corners){
-	var subTiles = getSubTiles(position, tilePosition, tester, corners);
-	layer.add(new Konva.Image({
-		x: position.x*scale,
-		y: position.y*scale+scale/2,
-		image: tileSheet,
-		crop: {x:subTiles.topLeft.x,y:subTiles.topLeft.y,width:16,height:16},
-		width: scale/2,
-		height: scale/2
-	}));
-	layer.add(new Konva.Image({
-		x: position.x*scale+scale/2,
-		y: position.y*scale+scale/2,
-		image: tileSheet,
-		crop: {x:subTiles.topRight.x,y:subTiles.topRight.y,width:16,height:16},
 		width: scale/2,
 		height: scale/2
 	}));
