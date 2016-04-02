@@ -11,7 +11,7 @@ var rooms = [];
 for(var i=0;i<10;i++)
 	rooms[i] = {width:randInt(4)+4, height:randInt(4)+4};
 rooms.push({width:4, height:4, tiles:[[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]]});
-var grid = dungeon.generate(200, 100, 20, rooms);
+var grid = dungeon.generate(2000, 1000, 100, rooms);
 console.log('Dungeon Loaded!');
 
 app.set('view engine', 'ejs');
@@ -27,6 +27,7 @@ wss.on('connection', function connection(ws) {
 	var id = 0;
 	while(players.indexOf(id)!=-1) id++;
 	players.push(id);
+	ws.send(JSON.stringify({action:'connect', id:id}));
   	
   	wss.clients.forEach(function each(client) {
 		if(client!=ws){
@@ -36,13 +37,14 @@ wss.on('connection', function connection(ws) {
   	
 	ws.on('message', function incoming(message, flags) {
 		var data = JSON.parse(message);
-		data.action = 'move';
 		data.id = id;
-		wss.clients.forEach(function each(client) {
-			if(client!=ws){
-				client.send(JSON.stringify(data));
-			}
-		});
+		if(data.action==='move' || data.action==='text'){
+			wss.clients.forEach(function each(client) {
+				if(client!=ws){
+					client.send(JSON.stringify(data));
+				}
+			});
+		}
 	});
 
 	ws.on('close', function close(e, f) {

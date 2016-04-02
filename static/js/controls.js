@@ -1,14 +1,6 @@
-var dirKeyStack = [], playerMovements = [], curMovement;
-var playerSpeed = 0.1;
-const DIRECTIONS = ['Down', 'Left', 'Right', 'Up'], CONTROLS = {'38': 3, '87': 3, '40': 0, '83': 0, '37': 1, '65': 1, '39': 2, '68': 2};
-
-document.addEventListener('DOMContentLoaded', function() {
-	
-	// Set all keys to false
-	keys = [];
-	for(var i=0;i<=222;i++)
-		keys[i] = false;
-});
+var dirKeyStack = [], playerMovements = [], curMovement, touches = [];
+var playerSpeed = 3;
+const DIRECTIONS = ['Down', 'Left', 'Right', 'Up'], CONTROLS = {'0': 0, '1':1, '2':2, '3':3, '38': 3, '87': 3, '40': 0, '83': 0, '37': 1, '65': 1, '39': 2, '68': 2};
 
 // Loads the player's animations
 function loadAnimations(){	
@@ -22,9 +14,15 @@ function createAnimations(sprite, updateView){
 	for(var i=0;i<DIRECTIONS.length;i++){
 		var addAnimation = function(i){
 			animations.push(new Konva.Animation(function(frame) {
-		        move(sprite, i, frame.timeDiff*playerSpeed);
+		        move(sprite, i, frame.timeDiff*playerSpeed/tileSize);
 		        if(updateView)
 		        	updateViewport();
+		        
+		        if(chatBoxes[sprite.id()]!=null){
+					chatBoxes[sprite.id()].x(sprite.x()+tileSize/4);
+					chatBoxes[sprite.id()].y(sprite.y());
+					chatLayer.draw();
+		        }
 			}, characterLayer));
 		};
 		addAnimation(i);
@@ -45,7 +43,7 @@ function movePlayer(dir){
 			curMovement.stop();
 		curMovement = playerMovements[dir];
 		playerMovements[dir].start();
-		updateServer();
+		updateServer('move');
 	}
 }
 
@@ -58,23 +56,66 @@ function stopPlayer(){
 	player.setAnimation('idle'+player.animation().substring('move'.length, player.animation().length));
 	player.stop();
 	characterLayer.draw();
-	updateServer();
+	updateServer('move');
 }
 
 // Add Key input
 document.addEventListener('keydown', function(event) {
+	
+	if(event.keyCode==13 && chatBoxes[player.id()]==null){
+		event.preventDefault();
+		setTimeout(function() { 
+			var text = prompt("Enter text to say.", "");
+			if(text!==null && text.trim()!=="")
+				sendChat(text);
+		}, 1);
+	}
+	
 	if(CONTROLS[event.keyCode.toString()]!=null){
-    	event.preventDefault();
+		event.preventDefault();
 		addKeyToStack(event.keyCode);
 	}
 });
+
+document.addEventListener('touchstart', touchStart);
+document.addEventListener('touchend', touchDone);
+document.addEventListener('touchcancel', touchDone);
+
+function touchStart(event){
+	event.preventDefault();
+	for(var i=0;i<event.changedTouches.length;i++){
+		if(event.changedTouches[i].pageX<=window.innerWidth/5 && dirKeyStack.indexOf(1)==-1)
+			addKeyToStack(1);
+		if(event.changedTouches[i].pageX>=window.innerWidth*4/5 && dirKeyStack.indexOf(2)==-1)
+			addKeyToStack(2);
+		if(event.changedTouches[i].pageY<=window.innerHeight/5 && dirKeyStack.indexOf(3)==-1)
+			addKeyToStack(3);
+		if(event.changedTouches[i].pageY>=window.innerHeight*4/5 && dirKeyStack.indexOf(0)==-1)
+			addKeyToStack(0);
+	}
+}
+
+function touchDone(event){
+	event.preventDefault();
+  	for(var i=0;i<event.changedTouches.length;i++){
+		if(event.changedTouches[i].pageX<=window.innerWidth/5 && dirKeyStack.indexOf(1)!=-1)
+			removeKeyFromStack(1);
+		if(event.changedTouches[i].pageX>=window.innerWidth*4/5 && dirKeyStack.indexOf(2)!=-1)
+			removeKeyFromStack(2);
+		if(event.changedTouches[i].pageY<=window.innerHeight/5 && dirKeyStack.indexOf(3)!=-1)
+			removeKeyFromStack(3);
+		if(event.changedTouches[i].pageY>=window.innerHeight*4/5 && dirKeyStack.indexOf(0)!=-1)
+			removeKeyFromStack(0);
+	}
+}
+
 document.addEventListener('keyup', function(event) {
 	if(CONTROLS[event.keyCode.toString()]!=null){
     	event.preventDefault();
 		removeKeyFromStack(event.keyCode);
 	}
 });
-
+;
 function addKeyToStack(key){
 	if(dirKeyStack.indexOf(key)==-1)
 		dirKeyStack.push(key);

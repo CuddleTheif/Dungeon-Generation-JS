@@ -1,5 +1,5 @@
-var dungeonStage, dungeonLayer, characterLayer, parallaxLayer, player, gameLoaded = false, loadingStage;
-var scale=32;
+var dungeonStage, dungeonLayer, characterLayer, parallaxLayer, chatLayer, player, gameLoaded = false, loadingStage, resizeFunction;
+var tileSize=32, virtualSize = 640;
 
 // Gets a sprite's current width
 Konva.Sprite.prototype.getWidth = function(){
@@ -11,33 +11,34 @@ Konva.Sprite.prototype.getHeight = function(){
 	return this.animations()[this.animation()][this.frameIndex()*4+3]*this.scaleY();
 }
 
+// Handle window resizing
+window.onresize = function(){
+	if(dungeonStage!=null){
+		if(resizeFunction)
+			clearTimeout(resizeFunction);
+		else
+			document.getElementById('loading').style.display = 'flex';
+		resizeFunction = setTimeout(function(){
+										dungeonStage.width(dungeon[0].length*tileSize*window.innerWidth/virtualSize);
+										dungeonStage.height(dungeon[0][0].length*tileSize*window.innerWidth/virtualSize);
+										dungeonStage.scale({x:window.innerWidth/virtualSize, y:window.innerWidth/virtualSize});
+										dungeonStage.draw();
+										resizeFunction = null;
+										updateViewport();
+										document.getElementById('loading').style.display = 'none';
+									}, 0);
+		
+	}
+}
+
 // Create the basic grid with the player after the page has loaded
 document.addEventListener('DOMContentLoaded', function() {
 	
-	// Create loading message
-	loadingStage = new Konva.Stage({
-		container: 'grid',
-		width: document.getElementById('viewport').clientWidth,
-		height: document.getElementById('viewport').clientHeight
-	});
-	var loadingLayer = new Konva.Layer();
-	var loadingText = new Konva.Text({
-      x: loadingStage.getWidth() / 2,
-      y: loadingStage.getHeight() / 2,
-      text: 'Loading...',
-      fontSize: 30,
-      fontFamily: 'Calibri',
-      fill: 'white'
-    });
-    loadingText.x((loadingStage.getWidth()-loadingText.getTextWidth())/2);
-    loadingText.y((loadingStage.getHeight()-loadingText.getTextHeight())/2);
-    loadingLayer.add(loadingText);
-    loadingStage.add(loadingLayer);
-	
 	// Create the dungeon layers
-	dungeonLayer = new Konva.Layer();
-	characterLayer = new Konva.Layer();
-	parallaxLayer = new Konva.Layer();
+	dungeonLayer = new Konva.FastLayer({clearBeforeDraw: false});
+	characterLayer = new Konva.FastLayer();
+	parallaxLayer = new Konva.FastLayer();
+	chatLayer = new Konva.FastLayer();
 	
 	// Load the tilesheets before making any tiles
 	var floorTileSheet = new Image();
@@ -88,8 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	  	  	if(dungeon[1][x][y]==1)
 				start = {x:x, y:y};
       player = new Konva.Sprite({
-        x: start.x*scale,
-        y: start.y*scale,
+        x: start.x*tileSize,
+        y: start.y*tileSize,
         image: playerImg,
         animation: 'idleDown',
         animations: {
@@ -132,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				    },
         frameRate: 10,
         frameIndex: 0,
-		scale: { x:scale/48, y:scale/48 }
+		scale: { x:1/2, y:1/2 }
       });
       
       // add the shape to the layer
@@ -140,9 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	  
 	  // Mark that the player has been loaded
 	  loadGame();
-      
-	  // Update the viewport
-	  updateViewport();
     };
     playerImg.src = 'images/placeholder_player.png';
 }, false);
@@ -150,38 +148,46 @@ document.addEventListener('DOMContentLoaded', function() {
 // Gets and adds the tile at the given position with the given variables
 function addTile(layer, position, tilePosition, tileSheet, tester, corners){
 	var subTiles = getSubTiles(position, tilePosition, tester, corners);
-	layer.add(new Konva.Image({
-		x: position.x*scale,
-		y: position.y*scale,
+	var img = new Konva.Image({
+		x: position.x*tileSize,
+		y: position.y*tileSize,
 		image: tileSheet,
 		crop: {x:subTiles.topLeft.x,y:subTiles.topLeft.y,width:16,height:16},
-		width: scale/2,
-		height: scale/2
-	}));
-	layer.add(new Konva.Image({
-		x: position.x*scale,
-		y: position.y*scale+scale/2,
+		width: tileSize/2,
+		height: tileSize/2
+	});
+	img.transformsEnabled('position');
+	layer.add(img);
+	img = new Konva.Image({
+		x: position.x*tileSize,
+		y: position.y*tileSize+tileSize/2,
 		image: tileSheet,
 		crop: {x:subTiles.bottomLeft.x,y:subTiles.bottomLeft.y,width:16,height:16},
-		width: scale/2,
-		height: scale/2
-	}));
-	layer.add(new Konva.Image({
-		x: position.x*scale+scale/2,
-		y: position.y*scale,
+		width: tileSize/2,
+		height: tileSize/2
+	});
+	img.transformsEnabled('position');
+	layer.add(img);
+	img = new Konva.Image({
+		x: position.x*tileSize+tileSize/2,
+		y: position.y*tileSize,
 		image: tileSheet,
 		crop: {x:subTiles.topRight.x,y:subTiles.topRight.y,width:16,height:16},
-		width: scale/2,
-		height: scale/2
-	}));
-	layer.add(new Konva.Image({
-		x: position.x*scale+scale/2,
-		y: position.y*scale+scale/2,
+		width: tileSize/2,
+		height: tileSize/2
+	});
+	img.transformsEnabled('position');
+	layer.add(img);
+	img = new Konva.Image({
+		x: position.x*tileSize+tileSize/2,
+		y: position.y*tileSize+tileSize/2,
 		image: tileSheet,
 		crop: {x:subTiles.bottomRight.x,y:subTiles.bottomRight.y,width:16,height:16},
-		width: scale/2,
-		height: scale/2
-	}));
+		width: tileSize/2,
+		height: tileSize/2
+	});
+	img.transformsEnabled('position');
+	layer.add(img);
 }
 
 // Gets the relative position of the subtiles of a tile using autotile
@@ -256,22 +262,22 @@ function loadGame(){
 		gameLoaded = true;
 	else{
 		
-		// Stop the loading screen
-		loadingStage.destroyChildren();
-		loadingStage.destroy();
+		// remove loading message
+		document.getElementById('loading').style.display = 'none';
 		
 		// Create the stage and add all the layers
 		dungeonStage = new Konva.Stage({
 		  container: 'grid',
-		  width: dungeon[0].length*scale,
-		  height: dungeon[0][0].length*scale
+		  width: dungeon[0].length*tileSize*window.innerWidth/virtualSize,
+		  height: dungeon[0][0].length*tileSize*window.innerWidth/virtualSize,
+		  scale: {x:window.innerWidth/virtualSize, y:window.innerWidth/virtualSize}
 		});
-		dungeonStage.add(dungeonLayer, characterLayer, parallaxLayer);
+		dungeonStage.add(dungeonLayer, characterLayer, parallaxLayer, chatLayer);
 		
 		// Load the animations, viewport, and server at the last step
 		loadAnimations();
 		updateViewport();
-		updateServer();
+		updateServer('move');
 	}
 }
 
@@ -281,10 +287,10 @@ function move(sprite, dir, distance) {
 	var y = dir==0 ? distance : (dir==3 ? -distance : 0);
 	sprite.x(sprite.x()+x);
 	sprite.y(sprite.y()+y);
-	if(dungeon[0][Math.trunc(sprite.x()/scale)][Math.trunc((sprite.y()+sprite.getHeight()/2)/scale)]<=1 || 
-		dungeon[0][Math.trunc((sprite.x()+sprite.getWidth())/scale)][Math.trunc((sprite.y()+sprite.getHeight()/2)/scale)]<=1 ||
-		dungeon[0][Math.trunc(sprite.x()/scale)][Math.trunc((sprite.y()+sprite.getHeight())/scale)]<=1 ||
-		dungeon[0][Math.trunc((sprite.x()+sprite.getWidth())/scale)][Math.trunc((sprite.y()+sprite.getHeight())/scale)]<=1){
+	if(dungeon[0][Math.trunc(sprite.x()/tileSize)][Math.trunc((sprite.y()+sprite.getHeight()/2)/tileSize)]<=1 || 
+		dungeon[0][Math.trunc((sprite.x()+sprite.getWidth())/tileSize)][Math.trunc((sprite.y()+sprite.getHeight()/2)/tileSize)]<=1 ||
+		dungeon[0][Math.trunc(sprite.x()/tileSize)][Math.trunc((sprite.y()+sprite.getHeight())/tileSize)]<=1 ||
+		dungeon[0][Math.trunc((sprite.x()+sprite.getWidth())/tileSize)][Math.trunc((sprite.y()+sprite.getHeight())/tileSize)]<=1){
 		found = true;
 		sprite.x(sprite.x()-x);
 		sprite.y(sprite.y()-y);
@@ -293,7 +299,8 @@ function move(sprite, dir, distance) {
 
 // Udate the player's viewport onto the player
 function updateViewport(){
-	var viewport = document.getElementById("viewport");
-	viewport.scrollLeft = player.getAbsolutePosition().x-viewport.clientWidth/2;
-	viewport.scrollTop = player.getAbsolutePosition().y-viewport.clientHeight/2;
+	//dungeonStage.setX(-player.x()*dungeonStage.scale().x+window.innerWidth/2);
+	//dungeonStage.setY(-player.y()*dungeonStage.scale().y+window.innerHeight/2);
+	//dungeonStage.draw();
+	window.scrollTo(player.getAbsolutePosition().x-window.innerWidth/2, player.getAbsolutePosition().y-window.innerHeight/2);
 }

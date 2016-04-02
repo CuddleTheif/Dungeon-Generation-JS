@@ -1,4 +1,4 @@
-var multiplayerSocket, players = {}, connected = false;
+var multiplayerSocket, players = {}, connected = false, chatBoxes = {}, chatTime = 5000, playerId;
 
 document.addEventListener('DOMContentLoaded', function() {
 	multiplayerSocket = new WebSocket("ws:"+document.location.hostname+":"+document.location.port);
@@ -6,18 +6,21 @@ document.addEventListener('DOMContentLoaded', function() {
 	multiplayerSocket.onopen = function(event) { connected = true; };
 });
 
-function updateServer(){
-	if(connected)
-		multiplayerSocket.send(JSON.stringify({x:player.x(), y:player.y(), dir:DIRECTIONS.indexOf(player.animation().substr(4, player.animation().length)), move:player.animation().startsWith('move')}));
+function updateServer(action){
+	if(connected){
+		if(action==='move')
+			multiplayerSocket.send(JSON.stringify({action:action, x:player.x(), y:player.y(), dir:DIRECTIONS.indexOf(player.animation().substr(4, player.animation().length)), move:player.animation().startsWith('move')}));
+		else if(action==='text')
+			multiplayerSocket.send(JSON.stringify({action:action, text: arguments[1]}));
+	}
 }
 
 function serverUpdate(event){
-	console.log(event.data);
 	var data = JSON.parse(event.data);
 	
 	if(data.action==="move"){
 		if(players[data.id]==null){
-			players[data.id] = {sprite:player.clone()};
+			players[data.id] = {sprite:player.clone({id:'player'+data.id})};
 			players[data.id].movements = createAnimations(players[data.id].sprite, false);
 			characterLayer.add(players[data.id].sprite);
 			player.moveToTop();
@@ -37,6 +40,8 @@ function serverUpdate(event){
 		}
 		characterLayer.draw();
 	}
+	else if(data.action==="text")
+		displayChat(data.text, players[data.id].sprite);
 	else if(data.action==="delete"){
 		if(players[data.id].curMovement)
 			players[data.id].curMovement.stop();
@@ -45,5 +50,93 @@ function serverUpdate(event){
 		characterLayer.draw();
 	}
 	else if(data.action==="update")
-		updateServer();
+		updateServer('move');
+	else if(data.action==="connect")
+		player.id('player'+data.id);
+}
+
+// Send a chat to the server and display it on client
+function sendChat(text){
+	// Make sure there isn't already a chat displayed
+	if(chatBoxes[player.id()]!=null)
+		return false;
+	
+	// Send the text to the server
+	updateServer('text', text);
+	
+	// Display the chat on the client
+	displayChat(text, player);
+}
+
+// Display the given text from the given sprite
+function displayChat(text, sprite){
+	var chatBox = createChatBox(text);
+	chatBox.x(sprite.x()+tileSize/4);
+	chatBox.y(sprite.y());
+	chatBoxes[sprite.id()] = chatBox;
+	chatLayer.add(chatBox);
+	chatLayer.draw();
+	setTimeout(function(){ chatBox.destroyChildren(); chatBox.destroy(); chatLayer.draw(); chatBoxes[sprite.id()] = null; }, chatTime);
+}
+
+// Creates a chat box with the given text with a position of the player saying it
+function createChatBox(text){
+	
+	// Draw the text itself
+	var textBox = new Konva.Text({
+	  text: text,
+	  fontSize: tileSize/2,
+	  fontFamily: 'Calibri',
+	  fill: 'black',
+	  width: tileSize*10,
+	  padding: tileSize/4,
+	  align: 'left'
+	});
+	textBox.transformsEnabled('position');
+	
+	// Set the text position based on the player pos
+	if(textBox.getTextWidth()<textBox.width())
+		textBox.width(textBox.getTextWidth()+tileSize/2);
+	textBox.x(-textBox.width()+tileSize*3/4);
+	textBox.y(-textBox.height()-tileSize/3);
+	if(textBox.width()<tileSize*3/2)
+		textBox.x(-tileSize/3);
+	
+	// Draw the base background of the text
+	var background = new Konva.Rect({
+	  x: textBox.x(),
+	  y: textBox.y(),
+	  width: textBox.width(),
+	  height: textBox.height(),
+	  fill: 'white',
+	  stroke: 'black',
+	  strokeWidth: tileSize/10
+	});
+	background.transformsEnabled('position');
+	  
+	// Draw the tab from the player to the text box
+	var tabFill = new Konva.Line({
+	  points: [-tileSize/4, textBox.y()+textBox.height()-tileSize/10, 0, 0, tileSize/4, textBox.y()+textBox.height()-tileSize/10],
+	  fill: 'white',
+	  stroke: 'black',
+	  strokeWidth: 0,
+	  closed : true
+	});
+	tabFill.transformsEnabled('position');
+	var tabTop = new Konva.Line({
+	  points: [-tileSize/4, textBox.y()+textBox.height()-tileSize/10, tileSize/4, textBox.y()+textBox.height()-tileSize/10],
+	  stroke: 'white',
+	  strokeWidth: tileSize/10
+	});
+ 	tabTop.transformsEnabled('position');
+	var tabOutline = tabFill.clone({
+		closed: false,
+	  strokeWidth: tileSize/10
+	});
+	tabOutline.transformsEnabled('position');
+		
+	// Add all the shapes to a group and return the group
+	var group = new Konva.Group();
+	group.add(background, tabFill, tabTop, tabOutline, textBox);
+	return group;
 }
