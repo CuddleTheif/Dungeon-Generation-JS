@@ -1,5 +1,5 @@
-var dungeonStage, dungeonLayer, characterLayer, parallaxLayer, chatLayer, player, gameLoaded = false, loadingStage, resizeFunction;
-var tileSize=32, virtualSize = 640;
+var dungeonStage, dungeonLayer, dungeonImage, characterLayer, parallaxLayer, parallaxImage, chatLayer, player, gameLoaded = false, loadingStage;
+var tileSize=32, virtualSize = {x:30*tileSize,y:17*tileSize};
 
 // Gets a sprite's current width
 Konva.Sprite.prototype.getWidth = function(){
@@ -14,20 +14,14 @@ Konva.Sprite.prototype.getHeight = function(){
 // Handle window resizing
 window.onresize = function(){
 	if(dungeonStage!=null){
-		if(resizeFunction)
-			clearTimeout(resizeFunction);
-		else
-			document.getElementById('loading').style.display = 'flex';
-		resizeFunction = setTimeout(function(){
-										dungeonStage.width(dungeon[0].length*tileSize*window.innerWidth/virtualSize);
-										dungeonStage.height(dungeon[0][0].length*tileSize*window.innerWidth/virtualSize);
-										dungeonStage.scale({x:window.innerWidth/virtualSize, y:window.innerWidth/virtualSize});
-										dungeonStage.draw();
-										resizeFunction = null;
-										updateViewport();
-										document.getElementById('loading').style.display = 'none';
-									}, 0);
-		
+		document.getElementById('loading').style.display = 'flex';
+		dungeonStage.width(window.innerWidth);
+		dungeonStage.height(window.innerHeight);
+		var scale = window.innerWidth/virtualSize.x*virtualSize.y < window.innerHeight ? window.innerHeight/virtualSize.y : window.innerWidth/virtualSize.x;
+		dungeonStage.scale({x:scale, y:scale});
+		dungeonStage.draw();
+		updateViewport();
+		document.getElementById('loading').style.display = 'none';
 	}
 }
 
@@ -35,10 +29,14 @@ window.onresize = function(){
 document.addEventListener('DOMContentLoaded', function() {
 	
 	// Create the dungeon layers
-	dungeonLayer = new Konva.FastLayer({clearBeforeDraw: false});
-	characterLayer = new Konva.FastLayer();
+	dungeonLayer = new Konva.FastLayer();
+	characterLayer = new Konva.Layer({hitGraphEnabled : false});
 	parallaxLayer = new Konva.FastLayer();
-	chatLayer = new Konva.FastLayer();
+	chatLayer = new Konva.Layer({hitGraphEnabled : false});
+	
+	// Create groups for images of layers
+	dungeonGroup = new Konva.Group();
+	parallaxGroup = new Konva.Group();
 	
 	// Load the tilesheets before making any tiles
 	var floorTileSheet = new Image();
@@ -51,27 +49,65 @@ document.addEventListener('DOMContentLoaded', function() {
     			for(var y=0;y<dungeon[0][x].length;y++){
     				switch(dungeon[0][x][y]){
     					case 0: // nothing = roof tile
-    						addTile(parallaxLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
+    						addTile(parallaxGroup, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						if(y>0 && dungeon[0][x][y-1]!=0)
-    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
+    							addTile(parallaxGroup, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
     					case 1: // wall tile
-    						addTile(dungeonLayer, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, function(x, y){return x>=0 && y>=0 && x<dungeon[0].length && y<dungeon[0][x].length && dungeon[0][x][y]==1;}, false);
+    						addTile(dungeonGroup, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, function(x, y){return x>=0 && y>=0 && x<dungeon[0].length && y<dungeon[0][x].length && dungeon[0][x][y]==1;}, false);
     						if(y>0 && dungeon[0][x][y-1]!=0)
-    							addTile(parallaxLayer, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
+    							addTile(parallaxGroup, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, function(x, y){return x<0 || y<0 || x>=dungeon[0].length || y>=dungeon[0][x].length || dungeon[0][x][y]==0 || dungeon[0][x][y+1]<=1;}, true);
     						break;
     					case 2: // room tile
-    						addTile(dungeonLayer, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==2;}, true);
+    						addTile(dungeonGroup, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==2;}, true);
     						break;
     					case 3: // path tile
-    						addTile(dungeonLayer, {x:x,y:y}, {x:pathTile.x*64, y:pathTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==3;}, true);
+    						addTile(dungeonGroup, {x:x,y:y}, {x:pathTile.x*64, y:pathTile.y*96}, floorTileSheet, function(x, y){return dungeon[0][x][y]==3;}, true);
     						break;
     				}
     			}
     		}
     		
-    		// Mark that the tiles have loaded
-    		loadGame();
+    		// Cache the dungeon group and parallax group and then add the images (cropped) to the layer
+    		dungeonGroup.toImage({
+    		  x:0,
+    		  y:0,
+    		  width:dungeon[0].length*tileSize,
+    		  height:dungeon[0][0].length*tileSize,
+			  callback: function(img) {
+			    dungeonImage = new Konva.Image({
+					x: 0,
+					y: 0,
+					width:virtualSize.x,
+					height:virtualSize.y,
+					image: img,
+				crop: {x:0,y:0,width:virtualSize.x,height:virtualSize.y}
+				});
+				dungeonLayer.add(dungeonImage);
+				updateViewport();
+			  }
+			});
+			parallaxGroup.toImage({
+    		  x:0,
+    		  y:0,
+    		  width:dungeon[0].length*tileSize,
+    		  height:dungeon[0][0].length*tileSize,
+			  callback: function(img) {
+			    parallaxImage = new Konva.Image({
+					x: 0,
+					y: 0,
+					width:virtualSize.x,
+					height:virtualSize.y,
+					image: img,
+				crop: {x:0,y:0,width:virtualSize.x,height:virtualSize.y}
+				});
+				parallaxLayer.add(parallaxImage);
+				updateViewport();
+			  }
+			});
+    		
+			// Mark that the tiles have loaded
+			loadGame();
     	
 		};
     	wallTileSheet.src = 'images/placeholder_walls.png';
@@ -135,6 +171,10 @@ document.addEventListener('DOMContentLoaded', function() {
         frameIndex: 0,
 		scale: { x:1/2, y:1/2 }
       });
+      
+      // If player id already set, set it in the sprite
+      if(playerId!=null)
+      	  player.id('player'+playerId);
       
       // add the shape to the layer
 	  characterLayer.add(player);
@@ -266,11 +306,12 @@ function loadGame(){
 		document.getElementById('loading').style.display = 'none';
 		
 		// Create the stage and add all the layers
+		var scale = window.innerWidth/virtualSize.x*virtualSize.y < window.innerHeight ? window.innerHeight/virtualSize.y : window.innerWidth/virtualSize.x;
 		dungeonStage = new Konva.Stage({
 		  container: 'grid',
-		  width: dungeon[0].length*tileSize*window.innerWidth/virtualSize,
-		  height: dungeon[0][0].length*tileSize*window.innerWidth/virtualSize,
-		  scale: {x:window.innerWidth/virtualSize, y:window.innerWidth/virtualSize}
+		  width: window.innerWidth,
+		  height: window.innerHeight,
+      	  scale: {x:scale, y:scale}
 		});
 		dungeonStage.add(dungeonLayer, characterLayer, parallaxLayer, chatLayer);
 		
@@ -299,8 +340,29 @@ function move(sprite, dir, distance) {
 
 // Udate the player's viewport onto the player
 function updateViewport(){
-	//dungeonStage.setX(-player.x()*dungeonStage.scale().x+window.innerWidth/2);
-	//dungeonStage.setY(-player.y()*dungeonStage.scale().y+window.innerHeight/2);
-	//dungeonStage.draw();
-	window.scrollTo(player.getAbsolutePosition().x-window.innerWidth/2, player.getAbsolutePosition().y-window.innerHeight/2);
+	
+	if(dungeonImage==null || parallaxImage==null)
+		return;
+	
+	var x = player.x()-window.innerWidth/dungeonStage.scale().x/2;
+	var y = player.y()-window.innerHeight/dungeonStage.scale().y/2;
+	
+	dungeonImage.crop({
+						x:x,
+						y:y,
+						width:virtualSize.x,
+						height:virtualSize.y
+					});
+	parallaxImage.crop({
+						x:x,
+						y:y,
+						width:virtualSize.x,
+						height:virtualSize.y
+					});
+	
+	characterLayer.setX(-x);
+	characterLayer.setY(-y);
+	chatLayer.setX(-x);
+	chatLayer.setY(-y);
+	dungeonStage.draw();
 }

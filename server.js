@@ -11,7 +11,7 @@ var rooms = [];
 for(var i=0;i<10;i++)
 	rooms[i] = {width:randInt(4)+4, height:randInt(4)+4};
 rooms.push({width:4, height:4, tiles:[[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]]});
-var grid = dungeon.generate(2000, 1000, 100, rooms);
+var grid = dungeon.generate(200, 100, 20, rooms);
 console.log('Dungeon Loaded!');
 
 app.set('view engine', 'ejs');
@@ -31,7 +31,11 @@ wss.on('connection', function connection(ws) {
   	
   	wss.clients.forEach(function each(client) {
 		if(client!=ws){
-			client.send(JSON.stringify({action:'update'}));
+			try{
+				client.send(JSON.stringify({action:'update'}));
+			} catch (e){
+				console.log(e);
+			}
 		}
 	});
   	
@@ -41,7 +45,11 @@ wss.on('connection', function connection(ws) {
 		if(data.action==='move' || data.action==='text'){
 			wss.clients.forEach(function each(client) {
 				if(client!=ws){
-					client.send(JSON.stringify(data));
+					try{
+						client.send(JSON.stringify(data));
+					} catch (e){
+						console.log(e);
+					}
 				}
 			});
 		}
@@ -51,7 +59,11 @@ wss.on('connection', function connection(ws) {
 		players.splice(players.indexOf(id), 1);
 		wss.clients.forEach(function each(client) {
 			if(client!=ws){
-				client.send(JSON.stringify({action:'delete', id:id}));
+				try{
+					client.send(JSON.stringify({action:'delete', id:id}));
+				} catch (e){
+					console.log(e);
+				}
 			}
 		});
 	});

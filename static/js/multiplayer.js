@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateServer(action){
-	if(connected){
+	if(connected && player!=null){
 		if(action==='move')
 			multiplayerSocket.send(JSON.stringify({action:action, x:player.x(), y:player.y(), dir:DIRECTIONS.indexOf(player.animation().substr(4, player.animation().length)), move:player.animation().startsWith('move')}));
 		else if(action==='text')
@@ -17,6 +17,9 @@ function updateServer(action){
 
 function serverUpdate(event){
 	var data = JSON.parse(event.data);
+	
+	if(data.id==playerId)
+		return;
 	
 	if(data.action==="move"){
 		if(players[data.id]==null){
@@ -40,7 +43,7 @@ function serverUpdate(event){
 		}
 		characterLayer.draw();
 	}
-	else if(data.action==="text")
+	else if(data.action==="text" && chatBoxes[players[data.id].sprite.id()]==null)
 		displayChat(data.text, players[data.id].sprite);
 	else if(data.action==="delete"){
 		if(players[data.id].curMovement)
@@ -51,8 +54,11 @@ function serverUpdate(event){
 	}
 	else if(data.action==="update")
 		updateServer('move');
-	else if(data.action==="connect")
-		player.id('player'+data.id);
+	else if(data.action==="connect"){
+		playerId = data.id;
+		if(player!=null)
+			player.id('player'+data.id);
+	}
 }
 
 // Send a chat to the server and display it on client
@@ -61,11 +67,11 @@ function sendChat(text){
 	if(chatBoxes[player.id()]!=null)
 		return false;
 	
-	// Send the text to the server
-	updateServer('text', text);
-	
 	// Display the chat on the client
 	displayChat(text, player);
+	
+	// Send the text to the server
+	updateServer('text', text);
 }
 
 // Display the given text from the given sprite

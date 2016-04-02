@@ -15,14 +15,18 @@ function createAnimations(sprite, updateView){
 		var addAnimation = function(i){
 			animations.push(new Konva.Animation(function(frame) {
 		        move(sprite, i, frame.timeDiff*playerSpeed/tileSize);
-		        if(updateView)
-		        	updateViewport();
 		        
 		        if(chatBoxes[sprite.id()]!=null){
 					chatBoxes[sprite.id()].x(sprite.x()+tileSize/4);
 					chatBoxes[sprite.id()].y(sprite.y());
 					chatLayer.draw();
 		        }
+		        
+		        if(updateView){
+		        	updateViewport();
+		        	return false;
+		        }
+		        
 			}, characterLayer));
 		};
 		addAnimation(i);
