@@ -2,11 +2,12 @@ var server = require('http').createServer(),
 		wss = new require('ws').Server({ server: server }),
 		express = require('express'),
 		app = express(),
-		port = 8080,
+		port = 80,
 		Dungeon = require('./dungeon');
 var app = express();
 var players = [];
 
+console.log("Starting server...");
 var rooms = [];
 for(var i=0;i<10;i++)
 	rooms[i] = {width:randInt(4)+4, height:randInt(4)+4};
