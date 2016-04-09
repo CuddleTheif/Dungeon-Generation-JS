@@ -1,2 +1,5 @@
 node_modules/
 ngrok.exe
+*.log
+*.sh
+pid
