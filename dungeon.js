@@ -10,7 +10,7 @@
 		this.pathTile = pathTile;
 	};
 	
-	const MAX_PATHS = 2, UNITS_PER_SEG = 1, NUM_LAYERS = 2, TILE_SIZE = 32;
+	const MAX_PATHS = 4, UNITS_PER_SEG = 1, NUM_LAYERS = 2, TILE_SIZE = 32;
 	
 	var TILE_ARRAY = [{name:'nothing', solid:true}, {name:'wall', solid:true}, {name:'room', solid:false}, {name:'path', solid:false}];
 	
@@ -38,15 +38,16 @@
 		var numPaths = Array(this.rooms.length).fill(0);
 		
 		// Create paths until every room has at least one path
+		var curRoom = randInt(this.rooms.length), prevRoom = -1;
 		while(numPaths.indexOf(0)!=-1){
-			var room1 = randInt(this.rooms.length), room2 = room1;
-			while(numPaths[room1] >= MAX_PATHS)
-				room1 = randInt(this.rooms.length);
-			while(room1==room2 || numPaths[room2] >= MAX_PATHS)
-				room2 = randInt(this.rooms.length);
-			this.paths.push(createPath(this.rooms[room1], this.rooms[room2]));
-			numPaths[room1]++;
-			numPaths[room2]++;
+			var nextRoom = randInt(this.rooms.length);
+			while(nextRoom==curRoom || nextRoom==prevRoom || numPaths[nextRoom] >= MAX_PATHS-1)
+				nextRoom = randInt(this.rooms.length);
+			this.paths.push(createPath(this.rooms[curRoom], this.rooms[nextRoom]));
+			numPaths[curRoom]++;
+			numPaths[nextRoom]++;
+			prevRoom = curRoom;
+			curRoom = nextRoom;
 		}
 	}
 	
