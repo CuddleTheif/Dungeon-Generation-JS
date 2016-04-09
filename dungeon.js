@@ -12,7 +12,7 @@
 	
 	const MAX_PATHS = 2, UNITS_PER_SEG = 1, NUM_LAYERS = 2, TILE_SIZE = 32;
 	
-	var TILE_ARRAY = [[{name:'nothing', solid:true}, {name:'wall', solid:true}, {name:'room', solid:false}, {name:'path', solid:false}], [{name:'nothing', solid:false}, {name:'entrance', solid:false}, {name:'exit', solid:false}]];
+	var TILE_ARRAY = [{name:'nothing', solid:true}, {name:'wall', solid:true}, {name:'room', solid:false}, {name:'path', solid:false}];
 	
 	// Generates the dungeon with the given number of rooms choosing from the given presets
 	// numRooms - The number of rooms in the dungeon (>= 2 if both entrance and exit otherwise >= 1)
@@ -107,36 +107,32 @@
 		// Check if there are entrance rooms and/or exit rooms and grab them
 		var entrances = [], exits = [];
 		for(var i=0;i<possibleRooms.length;i++){
-			if(possibleRooms[i].tiles!=null){
-				for(var j=0,entrance=false,exit=false; j<possibleRooms[i].tiles.length && !exit && !entrance;j++){
-					if(!entrance && possibleRooms[i].tiles[j].indexOf(1)!=-1){
-						entrances.push({room:possibleRooms[i], position:{x:j,y:possibleRooms[i].tiles[j].indexOf(1)}});
-						entrance=true;
-					}
-					if(!exit && possibleRooms[i].tiles[j].indexOf(2)!=-1){
-						exits.push({room:possibleRooms[i], position:{x:j,y:possibleRooms[i].tiles[j].indexOf(2)}});
-						exit=true;
-					}
-				}
-			}
+			if(possibleRooms[i].entrance!=null)
+				entrances.push(possibleRooms[i]);
+			if(possibleRooms[i].exit!=null)
+				exits.push(possibleRooms[i]);
 		}
 		
 		// If any entrances and/or exits pick one of each to use
 		if(entrances.length>0){
-			var entrance = entrances[randInt(entrances.length)];
-			this.rooms[0] = JSON.parse(JSON.stringify(entrance.room));
+			this.rooms[0] = JSON.parse(JSON.stringify(entrances[randInt(entrances.length)]));
 			this.rooms[0].x = randInt(this.width-this.rooms[0].width-2)+1;
 			this.rooms[0].y = randInt(this.height-this.rooms[0].height-2)+1;
-			this.start = {x:entrance.position.x+this.rooms[0].x, y:entrance.position.y+this.rooms[0].y};
+			this.start = {
+				x:this.rooms[0].entrance.x+this.rooms[0].x,
+				y:this.rooms[0].entrance.y+this.rooms[0].y
+			};
 		}
 		if(exits.length>0){
-			var exit = exits[randInt(exits.length)];
-			this.rooms[this.rooms.length] = JSON.parse(JSON.stringify(exit.room));
+			this.rooms[this.rooms.length] = JSON.parse(JSON.stringify(exits[randInt(exits.length)]));
 			do{
 				this.rooms[this.rooms.length-1].x = randInt(width-this.rooms[this.rooms.length-1].width-2)+1;
 				this.rooms[this.rooms.length-1].y = randInt(height-this.rooms[this.rooms.length-1].height-2)+1;
 			}while(this.rooms.length==2 && roomsIntersect(this.rooms[0], this.rooms[1]));
-			this.exit = {x:exit.position.x+this.rooms[this.rooms.length-1].x, y:exit.position.y+this.rooms[this.rooms.length-1].y};
+			this.exit = {
+				x:this.rooms[this.rooms.length-1].exit.x+this.rooms[this.rooms.length-1].x,
+				y:this.rooms[this.rooms.length-1].exit.y+this.rooms[this.rooms.length-1].y
+			};
 		}
 		
 		// Remove all entrances and exits since ones have been choosen
@@ -170,6 +166,12 @@
 		}
 	}
 	
+	
+	// Checks if the given room can fit in the given size
+	function canRoomsFit(width, height, numRooms, room){
+		return (room.width+2)*(room.height+2)*numRooms<width*height;
+	}
+	
 	// Checks if the two given rooms intersect
 	function roomsIntersect(room1, room2){
 		return room1.x <= room2.x+room2.width && room1.x+room1.width >= room2.x && room1.y <= room2.y+room2.height && room1.y+room1.height >= room2.y;
@@ -187,16 +189,16 @@
 		// Create grid for collision
 		this.collisionGrid = [];
 		for(var x=0;x<this.width;x++)
-			this.collisionGrid[x] = Array(this.height).fill(TILE_ARRAY[0][0].solid);
+			this.collisionGrid[x] = Array(this.height).fill(TILE_ARRAY[0].solid);
 		
 		// Add paths to grid
 		for(var i=0;i<this.paths.length;i++){
 			for(var j=0;j<this.paths[i].length;j++){
 				for(var k=0;Math.abs(k)<=Math.abs(this.paths[i][j].distance);k+=this.paths[i][j].distance/Math.abs(this.paths[i][j].distance)){
 					if(this.paths[i][j].direction)
-						this.collisionGrid[this.paths[i][j].startX][this.paths[i][j].startY + k] = TILE_ARRAY[0][3].solid;
+						this.collisionGrid[this.paths[i][j].startX][this.paths[i][j].startY + k] = TILE_ARRAY[3].solid;
 					else
-						this.collisionGrid[this.paths[i][j].startX + k][this.paths[i][j].startY] = TILE_ARRAY[0][3].solid;
+						this.collisionGrid[this.paths[i][j].startX + k][this.paths[i][j].startY] = TILE_ARRAY[3].solid;
 				}
 			}
 		}
@@ -204,14 +206,10 @@
 		// Add rooms to grid
 		for(var i=0;i<this.rooms.length;i++)
 		{
-			if(this.rooms[i].tiles!=null)
-				for(var x=0;x<this.rooms[i].tiles.length;x++)
-					for(var y=0;y<this.rooms[i].tiles[x].length;y++)
-						this.collisionGrid[x+this.rooms[i].x][y+this.rooms[i].y] = TILE_ARRAY[1][this.rooms[i].tiles[x][y]].solid;
 			
 			for(var x=0;x<this.rooms[i].width;x++)
 				for(var y=0;y<this.rooms[i].height;y++)
-					this.collisionGrid[x+this.rooms[i].x][y+this.rooms[i].y] = TILE_ARRAY[0][2].solid;
+					this.collisionGrid[x+this.rooms[i].x][y+this.rooms[i].y] = TILE_ARRAY[2].solid;
 		}
 	}
 	
@@ -220,20 +218,17 @@
 		
 		// Create grid for drawing
 		var grid = [];
-		for(var i=0;i<NUM_LAYERS;i++){
-			grid[i] = [];
-			for(var x=0;x<this.width;x++)
-				grid[i][x] = Array(this.height).fill(0);
-		}
+		for(var x=0;x<this.width;x++)
+			grid[x] = Array(this.height).fill(0);
 		
 		// Add paths to grid
 		for(var i=0;i<this.paths.length;i++){
 			for(var j=0;j<this.paths[i].length;j++){
 				for(var k=0;Math.abs(k)<=Math.abs(this.paths[i][j].distance);k+=this.paths[i][j].distance/Math.abs(this.paths[i][j].distance)){
 					if(this.paths[i][j].direction)
-						grid[0][this.paths[i][j].startX][this.paths[i][j].startY + k] = 3;
+						grid[this.paths[i][j].startX][this.paths[i][j].startY + k] = 3;
 					else
-						grid[0][this.paths[i][j].startX + k][this.paths[i][j].startY] = 3;
+						grid[this.paths[i][j].startX + k][this.paths[i][j].startY] = 3;
 				}
 			}
 		}
@@ -241,21 +236,16 @@
 		// Add rooms to grid
 		for(var i=0;i<this.rooms.length;i++)
 		{
-			if(this.rooms[i].tiles!=null)
-				for(var x=0;x<this.rooms[i].tiles.length;x++)
-					for(var y=0;y<this.rooms[i].tiles[x].length;y++)
-						grid[1][x+this.rooms[i].x][y+this.rooms[i].y] = this.rooms[i].tiles[x][y];
-			
 			for(var x=0;x<this.rooms[i].width;x++)
 				for(var y=0;y<this.rooms[i].height;y++)
-					grid[0][x+this.rooms[i].x][y+this.rooms[i].y] = 2;
+					grid[x+this.rooms[i].x][y+this.rooms[i].y] = 2;
 		}
 		
 		// Build and add walls to grid (walls are for visuals only)
-		for(var x=0;x<grid[0].length;x++)
-			for(var y=0;y<grid[0][x].length;y++)
-				if(y<grid[0][x].length-1 && grid[0][x][y]==0 && grid[0][x][y+1]>0)
-					grid[0][x][y] = 1;
+		for(var x=0;x<grid.length;x++)
+			for(var y=0;y<grid[x].length;y++)
+				if(y<grid[x].length-1 && grid[x][y]==0 && grid[x][y+1]>0)
+					grid[x][y] = 1;
 		
 		// Get the tiles as local variables and size
 		var wallTile = this.wallTile;
@@ -280,18 +270,18 @@
 						
 						// Create methods for determining neighbor tiles
 			    		var isWallNeighbor = function(x, y){
-			    												return x>=0 && y>=0 && x<grid[0].length && y<grid[0][x].length && 
-			    													grid[0][x][y]==1;
+			    												return x>=0 && y>=0 && x<grid.length && y<grid[x].length && 
+			    													grid[x][y]==1;
 			    											};
 			    		var isRoofNeighbor = function(x, y){
-			    												return x<0 || y<0 || x>=grid[0].length || y>=grid[0][x].length ||
-			    													grid[0][x][y]==0 || grid[0][x][y+1]<=1;
+			    												return x<0 || y<0 || x>=grid.length || y>=grid[x].length ||
+			    													grid[x][y]==0 || grid[x][y+1]<=1;
 			    											};
 				    	var isRoomNeighbor = function(x, y){
-				    											return grid[0][x][y]==2;
+				    											return grid[x][y]==2;
 				    										};
 				    	var isPathNeighbor = function(x, y){
-				    											return grid[0][x][y]==3;
+				    											return grid[x][y]==3;
 				    										};
 				    	
 				    	// Create function for counting tiles drawn
@@ -299,7 +289,6 @@
 				    	var realTileCount = 0;
 				    	var countTile = function(){
 				    		if(++tileCount>=realTileCount){
-				    			console.log("TILES LOADED!");
 				    			// Save the created images to the server
 				    			var loadedBuffer;
 					    		background.toBuffer('png', function(err, buffer){
@@ -320,20 +309,20 @@
 				    	};
 				    	
 				    	// Draw the tiles in the grid
-			    		for(var x=0;x<grid[0].length;x++){
-			    			for(var y=0;y<grid[0][x].length;y++){
+			    		for(var x=0;x<grid.length;x++){
+			    			for(var y=0;y<grid[x].length;y++){
 			    				realTileCount++;
-			    				switch(grid[0][x][y]){
+			    				switch(grid[x][y]){
 			    					case 0: // nothing = roof tile
 			    						addTile(topground, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
-			    						if(y>0 && grid[0][x][y-1]!=0){
+			    						if(y>0 && grid[x][y-1]!=0){
 			    							realTileCount++;
 			    							addTile(topground, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
 			    						}
 			    						break;
 			    					case 1: // wall tile
 			    						addTile(background, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, isWallNeighbor, false, countTile);
-			    						if(y>0 && grid[0][x][y-1]!=0){
+			    						if(y>0 && grid[x][y-1]!=0){
 			    							realTileCount++;
 			    							addTile(topground, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
 			    						}
@@ -347,7 +336,6 @@
 			    				}
 			    			}
 			    		}
-			    		console.log("Tiles drawn!");
 						
 					});
 				});
@@ -466,6 +454,7 @@
 		return subTiles;
 	}
 	
+	module.exports.canRoomsFit = canRoomsFit;
 	module.exports.TILE_ARRAY = TILE_ARRAY;
 	module.exports.Dungeon = Dungeon;
 	

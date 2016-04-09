@@ -1,7 +1,7 @@
 var multiplayerSocket, players = {}, connected = false, chatBoxes = {}, chatTime = 5000, playerId;
 
 document.addEventListener('DOMContentLoaded', function() {
-	multiplayerSocket = new WebSocket("ws:"+document.location.hostname+":"+document.location.port);
+	multiplayerSocket = new WebSocket("ws:"+document.location.hostname+":"+document.location.port+"/"+name);
 	multiplayerSocket.onmessage = serverUpdate;
 	multiplayerSocket.onopen = function(event) { connected = true; };
 });

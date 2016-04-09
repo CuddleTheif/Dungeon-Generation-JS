@@ -3,91 +3,68 @@ var server = require('http').createServer(),
 		express = require('express'),
 		app = express(),
 		port = 80,
-		Dungeon = require('./dungeon');
+		Dungeon = require('./dungeon'),
+		bodyParser = require('body-parser'),
+	 	url = require('url')
+		Page = require('./dungeonPage');
 var app = express();
-var players = [];
-
-console.log("Starting server...");
-var rooms = [];
-for(var i=0;i<10;i++)
-	rooms[i] = {width:randInt(4)+4, height:randInt(4)+4};
-rooms.push({width:4, height:4, tiles:[[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]]});
-var dungeon = new Dungeon.Dungeon(200, 100, {x:5, y:1}, {x:3, y:3}, {x:3, y:2});
-dungeon.generate(20, rooms);
-console.log('generated!');
-var serveBuffers = function(backBuffer, topBuffer){
-														app.get('/dungeon_back.png', function(req, res) {
-															res.writeHead(200, {'Content-Type': 'image/png'});
-    														res.end(backBuffer);
-														});
-														app.get('/dungeon_top.png', function(req, res) {
-															res.writeHead(200, {'Content-Type': 'image/png'});
-    														res.end(topBuffer);
-														});
-														console.log("IMAGES SERVED!");
-													};
-dungeon.draw(serveBuffers);
+var dungeons = [];
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
 app.use(express.static('static'));
 
 app.get('/', function(req, res) {
-    res.render('dungeon', {collisionGrid: JSON.stringify(dungeon.collisionGrid), start: JSON.stringify(dungeon.start)});
-    console.log('Page Loaded!');
+    res.render('create');
 });
 
-wss.on('connection', function connection(ws) {
-  
-	var id = 0;
-	while(players.indexOf(id)!=-1) id++;
-	players.push(id);
-	ws.send(JSON.stringify({action:'connect', id:id}));
-  	
-  	wss.clients.forEach(function each(client) {
-		if(client!=ws){
-			try{
-				client.send(JSON.stringify({action:'update'}));
-			} catch (e){
-				//console.log(e);
-			}
-		}
-	});
-  	
-	ws.on('message', function incoming(message, flags) {
-		var data = JSON.parse(message);
-		data.id = id;
-		if(data.action==='move' || data.action==='text'){
-			wss.clients.forEach(function each(client) {
-				if(client!=ws){
-					try{
-						client.send(JSON.stringify(data));
-					} catch (e){
-						//console.log(e);
-					}
-				}
-			});
-		}
-	});
+app.post('/attempt', function(req, res) {
+	var dungeon, data = req.body;
+	for(var i=0;i<dungeons.length && !dungeon;i++)
+		if(dungeons[i].name === data.name)
+			dungeon = dungeons[i];
+	if(dungeon){
+		/*var player = false
+		for(var i=0;i<dungeon.players.length && !player;i++)
+			if(dungeon.players[i]!=null)
+				player = true;
+		if(player)
+			res.json({stats: -1, message: 'That dungeon already exists and their are people in it!'});
+		else if(Dungeon.canRoomsFit(parseInt(data.width), parseInt(data.height), parseInt(data.numRooms), {width:parseInt(data.roomMaxWidth), height:parseInt(data.roomMaxHeight)}))
+			res.json({stats: 0, message: 'That dungeon already exists but there is no one in it. Do you want to delete it and make a new one?'});
+		else
+			res.json({stats: -1, message: "I can't seem to fit that many rooms of that size in a dungeon of that size!"});*/
+		res.json({stats: -1, message: 'That dungeon already exists'});
+	}
+	else{
+		if(Dungeon.canRoomsFit(parseInt(data.width), parseInt(data.height), parseInt(data.numRooms), {width:parseInt(data.roomMaxWidth), height:parseInt(data.roomMaxHeight)}))
+			res.json({stats: 1, message:''});
+		else
+			res.json({stats: -1, message: "I can't seem to fit that many rooms of that size in a dungeon of that size!"});
+	}
+});
 
-	ws.on('close', function close(e, f) {
-		players.splice(players.indexOf(id), 1);
-		wss.clients.forEach(function each(client) {
-			if(client!=ws){
-				try{
-					client.send(JSON.stringify({action:'delete', id:id}));
-				} catch (e){
-					//console.log(e);
-				}
-			}
-		});
-	});
-  
+app.post('/create', function(req, res) {
+	var dungeon, data = req.body;
+	//for(var i=0;i<dungeons.length && !dungeon;i++)
+	//	if(dungeons[i].name === data.name)
+	//		dungeon = dungeons[i];
+	//if(dungeon)
+	//	dungeon.setupPage(app, wss, data.name, parseInt(data.width), parseInt(data.height), parseInt(data.numRooms), parseInt(data.roomMinWidth), parseInt(data.roomMaxWidth), parseInt(data.roomMinHeight), parseInt(data.roomMaxHeight));
+	//else
+	setTimeout(function(){
+		dungeons.push(new Page.Page(app, data.name, parseInt(data.width), parseInt(data.height), parseInt(data.numRooms), parseInt(data.roomMinWidth), parseInt(data.roomMaxWidth), parseInt(data.roomMinHeight), parseInt(data.roomMaxHeight)));
+	}, 1);
+    res.send();
+});
+
+wss.on('connection', function(ws){
+	var location = url.parse(ws.upgradeReq.url, true);
+	for(var i=0;i<dungeons.length;i++)
+		if(location.pathname==='/'+dungeons[i].name)
+			dungeons[i].createWSConnection(wss, ws);
 });
 
 server.on('request', app);
 server.listen(port, function () { console.log('Listening on ' + server.address().port) });
-
-// Gets a random integer between 0 and the given number
-function randInt(max){
-	return Math.floor(Math.random() * max);
-}

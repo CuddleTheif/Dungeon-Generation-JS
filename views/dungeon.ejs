@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Dungeon Generation</title>
+		<title><%=title%> Dungeon</title>
 		<style>
 			body { background-color:black; margin: 0; padding:0;}
 		</style>
 		<meta charset="utf-8">
 		<script src="https://cdn.rawgit.com/konvajs/konva/0.11.1/konva.min.js"></script>
-		<script type="text/javascript">var roomTile = {x:3, y:3}, pathTile = {x:3, y:2}, wallTile = {x:5, y:1},  start = <%-start%>, collisionGrid = <%-collisionGrid%>;</script>
-		<script src="js/multiplayer.js"></script>
-		<script src="js/dungeon.js"></script>
-		<script src="js/controls.js"></script>
-		<script src="js/multiplayer.js"></script>
+		<script type="text/javascript">var roomTile = {x:3, y:3}, pathTile = {x:3, y:2}, wallTile = {x:5, y:1},  start = <%-start%>, name = "<%-title%>", collisionGrid = <%-collisionGrid%>;</script>
+		<script src="../js/multiplayer.js"></script>
+		<script src="../js/dungeon.js"></script>
+		<script src="../js/controls.js"></script>
 	</head>
 	<body>
 		<div id="grid"></div>
