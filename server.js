@@ -34,33 +34,35 @@ app.post('/attempt', function(req, res) {
 
 app.post('/create', function(req, res) {
 	var data = req.body;
-	var newPage = cp.fork('./dungeonPage.js', [data.name, data.width, data.height, data.numRooms, data.roomMinWidth, data.roomMaxWidth, data.roomMinHeight, data.roomMaxHeight]);
-	pages[data.name] = {loading:true, players:[]};
+  var name = data.name.toLowerCase();
+	var newPage = cp.fork('./dungeonPage.js', [name, data.width, data.height, data.numRooms, data.roomMinWidth, data.roomMaxWidth, data.roomMinHeight, data.roomMaxHeight]);
+	pages[name] = {loading:true, name:data.name, players:[], waiting:[]};
 	newPage.on('message', function(dungeon) {
-		console.log('Created dungeon '+data.name+'!');
-		pages[data.name].dungeon = dungeon;
-		pages[data.name].loading = false;
+		pages[name].dungeon = dungeon;
+		pages[name].loading = false;
+    for(var i=0;i<pages[name].waiting.length;i++)
+      pages[name].waiting[i].send("DONE");
 	});
     res.send();
 });
 
 app.get(/\/dungeon\/[^\/]+?\/?$/, function(req, res) {
-	var name = req.url.match(/^.*\/(.+?)\/?$/)[1];
+	var name = req.url.match(/^.*\/(.+?)\/?$/)[1].toLowerCase();
 	if(pages[name]){
 		if(pages[name].loading)
-			res.render('loading', {title: name});
+			res.render('loading', {title: pages[name].name});
 		else
-			res.render('dungeon', {collisionGrid: JSON.stringify(pages[name].dungeon.collisionGrid), start: JSON.stringify(pages[name].dungeon.start), title: name});
+			res.render('dungeon', {collisionGrid: JSON.stringify(pages[name].dungeon.collisionGrid), start: JSON.stringify(pages[name].dungeon.start), title: pages[name].name});
 	}
 	else{
-		res.render('noroom', {title: name});
+		res.render('noroom', {title: req.url.match(/^.*\/(.+?)\/?$/)[1]});
 	}
 
 });
 
 wss.on('connection', function(ws){
-	var name = url.parse(ws.upgradeReq.url, true).pathname.substr(1);
-	if(pages[name]){
+	var name = url.parse(ws.upgradeReq.url, true).pathname.substr(1).toLowerCase();
+	if(pages[name] && !pages[name].loading){
 		
 		var id = 0;
 		while(pages[name].players[id]!=null) id++;
@@ -90,7 +92,16 @@ wss.on('connection', function(ws){
 					client.send(JSON.stringify({action:'delete', id:id}));
 			});
 		});
+
 	}
+  else if(pages[name]){
+
+    pages[name].waiting.push(ws);
+    ws.on('close', function close(e, f) {
+        pages[name].waiting.splice(pages[name].waiting.indexOf(ws), 1);
+    });
+
+  }
 });
 
 server.on('request', app);
