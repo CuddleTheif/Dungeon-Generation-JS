@@ -15,14 +15,36 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('static'));
 
+// Page for the lobby of rooms
 app.get('/', function(req, res) {
+    res.render('lobby');
+});
+
+// Page for creating new dungeons
+app.get('/new', function(req, res) {
     res.render('create');
 });
 
+// Post for getting all the current dungeons and their statues
+app.post('/status', function(req, res) {
+  var status = {url: [], name: [], area: [], players: [], loading: []};
+  for(var name in pages){
+    if (!pages.hasOwnProperty(name) || pages[name]==null) continue;
+    status.url.push('/dungeon/'+name);
+    status.name.push(pages[name].name);
+    status.area.push(pages[name].area);
+    status.players.push(pages[name].players.length);
+    status.loading.push(pages[name].loading);  
+  }
+  res.send(status);
+});
+
+// Post for vaildating dungeon params
 app.post('/attempt', function(req, res) {
 	var data = req.body;
-	if(pages[data.name]){
-		res.json({stats: -1, message: 'That dungeon already exists'});
+  var name = data.name.toLowerCase().replace(/ /g, '_');
+	if(pages[name]){
+		res.json({stats: -1, message: 'That dungeon already exists! Please delete the one with the same name before making a new one!'});
 	}
 	else{
 		if(Dungeon.canRoomsFit(parseInt(data.width), parseInt(data.height), parseInt(data.numRooms), {width:parseInt(data.roomMaxWidth), height:parseInt(data.roomMaxHeight)}))
@@ -32,22 +54,41 @@ app.post('/attempt', function(req, res) {
 	}
 });
 
+// Post for creating a dungeon page
 app.post('/create', function(req, res) {
 	var data = req.body;
-  var name = data.name.toLowerCase();
-	var newPage = cp.fork('./dungeonPage.js', [name, data.width, data.height, data.numRooms, data.roomMinWidth, data.roomMaxWidth, data.roomMinHeight, data.roomMaxHeight]);
-	pages[name] = {loading:true, name:data.name, players:[], waiting:[]};
+  var name = data.name.toLowerCase().replace(/ /g, '_');
+	var newPage = cp.fork('./createPage.js', [name, data.width, data.height, data.numRooms, data.roomMinWidth, data.roomMaxWidth, data.roomMinHeight, data.roomMaxHeight]);
+	pages[name] = {loading:true, name:data.name, area:parseInt(data.width)*parseInt(data.height), players:[], waiting:[]};
 	newPage.on('message', function(dungeon) {
 		pages[name].dungeon = dungeon;
-		pages[name].loading = false;
-    for(var i=0;i<pages[name].waiting.length;i++)
+	  for(var i=0;i<pages[name].waiting.length;i++)
       pages[name].waiting[i].send("DONE");
+	  pages[name].loading = false;
 	});
-    res.send();
+  res.send();
 });
 
+// Post for deleting a dungeon page
+app.post('/delete', function(req, res) {
+  var data = req.body;
+  var name = data.name.toLowerCase().replace(/ /g, '_');
+  if(pages[name] && !pages[name].loading){
+    cp.fork('./deletePage.js', [name]);
+    for(var i=0;i<pages[name].players.length;i++)
+      pages[name].players[i].send({action: "delete"});
+    pages[name] = null;
+    res.send({status: 1, message:''});
+  }
+  else if(pages[name])
+    res.send({status: -1, message:'That dungeon is still being created! please wait for it to be finished before you delete it.'});
+  else
+    res.send({status: -1, message:"That dungeon doesn't exist!"});
+});
+
+// Every dungeon page is handled here
 app.get(/\/dungeon\/[^\/]+?\/?$/, function(req, res) {
-	var name = req.url.match(/^.*\/(.+?)\/?$/)[1].toLowerCase();
+	var name = req.url.match(/^.*\/(.+?)\/?$/)[1].toLowerCase().replace(/ /g, '_');
 	if(pages[name]){
 		if(pages[name].loading)
 			res.render('loading', {title: pages[name].name});
@@ -60,8 +101,9 @@ app.get(/\/dungeon\/[^\/]+?\/?$/, function(req, res) {
 
 });
 
+// Websocket connections are handled here (For dungeon pages, loading and live)
 wss.on('connection', function(ws){
-	var name = url.parse(ws.upgradeReq.url, true).pathname.substr(1).toLowerCase();
+	var name = url.parse(ws.upgradeReq.url, true).pathname.substr(1).toLowerCase().replace(/ /g, '_');
 	if(pages[name] && !pages[name].loading){
 		
 		var id = 0;

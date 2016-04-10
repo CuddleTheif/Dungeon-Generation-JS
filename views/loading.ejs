@@ -2,29 +2,17 @@
 <html>
 	<head>
 		<title><%=title%> Dungeon Loading</title>
-		<style>
-			body { background-color:purple; color: #DDDD00; margin: 0; padding:0;}
-			#center { 
-				width: 100vw;
-				height: 100vh;
-				display:flex;
-				justify-content:center;
-				align-items:center;
-				text-align:center;
-				font-size: 1.5vw;
-			}
-		</style>
-		<meta charset="utf-8">
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="/css/menu.css">
     <script src="/js/loading.js"></script>
     <script>var name="<%-title%>"</script>
 	</head>
 	<body>
 		<div id="center">
-			<div>
-				<h1>Loading <%=title%> Dungeon...</h1>
-				<br/>
-				<p>This may take a while depending on how big your dungeon is (Up to 1 whole min!). It will continue to load even without you so you can leave and comeback later (If you are really that impatient).</p>
-			</div>
+      <h1>Loading <%=title%> Dungeon...</h1>
+      <br/>
+      <p>This may take a while depending on how big your dungeon is (Up to 5 whole min!). It will continue to load even without you so you can leave and comeback later (If you are really that impatient).</p>
+      <button onclick="document.location='/';">Return to Lobby</button>
 		</div>
 	</body>
 </html>

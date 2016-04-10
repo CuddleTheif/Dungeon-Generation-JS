@@ -1,28 +1,14 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Dungeon Generation</title>
-		<style>
-			body { background-color:purple; color: #DDDD00; margin: 0; padding:0;}
-			#center { 
-				width: 100vw;
-				height: 100vh;
-				display:flex;
-				justify-content:center;
-				align-items:center;
-				text-align:center;
-				font-size: 1.5vw;
-			}
-			fieldset { display: inline; }
-			input { font-size: 1vw; }
-		</style>
-		<meta charset="utf-8">
+    <title>Create Dungeon Generation</title>	
+		<link rel="stylesheet" type="text/css" href="/css/menu.css">
+    <meta charset="utf-8">
 		<script src="/js/dungeonForm.js"></script>
 	</head>
 	<body>
 		<div id="center">
-		<div>
-			<form action="create" id="dungeon-form" onsubmit="return checkForm();" method="POST">
+			<form id="dungeon-form" onsubmit="createDungeon();">
 				<fieldset>
 					<legend>Dungeon Properties</legend>
 					Width <br/>
@@ -45,10 +31,9 @@
 					Room Max Height<br/>
 					<input type="number" name="roomMaxHeight" value=8 min=2 required/><br/><br/>
 				</fieldset>
-				<br/><br/>
-				<input type="submit" value="Submit" />
-			<form>
-		</div>
+			</form>
+      <button id="submit" onclick="createDungeon();" >Create Dungeon</button>
+      <button onclick="document.location = '/';">Return to Lobby</button>
 		</div>
 	</body>
 </html>

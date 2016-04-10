@@ -6,4 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if(event.data==="DONE")
       document.location.reload();
   };
+  multiplayerSocket.onclose = function(event) {
+    alert('You have been disconnected from the server! You are being moved back to the lobby!');
+    document.location = '/';
+  }
 });

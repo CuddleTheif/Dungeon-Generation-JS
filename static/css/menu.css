@@ -1,0 +1,36 @@
+body { 
+  background-color: purple; 
+  color: #DDDD00; 
+  margin: 0; 
+  padding: 0;
+  width: 100vw;
+}
+#center { 
+  text-align:center;
+  font-size: 30px;
+  padding: 10px;
+  margin: auto;
+}
+
+fieldset { display: inline; }
+input, table, button, p { font-size: 20px; }
+
+tr:first-child {
+  border-bottom: 2px solid black;
+}
+tr:last-child {
+  border-bottom: 1px solid black;
+}
+td, th {
+  margin: 0;
+  padding: 10px;
+  text-align: left;
+  border-bottom: inherit; 
+}
+
+button {
+  display: block;
+  margin: 10px auto;
+  color: inherit;
+  background-color: #5000a0;
+}

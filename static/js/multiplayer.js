@@ -4,6 +4,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	multiplayerSocket = new WebSocket("ws:"+document.location.hostname+":"+document.location.port+"/"+name);
 	multiplayerSocket.onmessage = serverUpdate;
 	multiplayerSocket.onopen = function(event) { connected = true; };
+  multiplayerSocket.onclose = function(event) {
+    alert('You have been disconnected from the server! You are being moved back to the lobby!');
+    document.location = '/';
+  };
 });
 
 function updateServer(action){
@@ -59,6 +63,10 @@ function serverUpdate(event){
 		if(player!=null)
 			player.id('player'+data.id);
 	}
+  else if(data.action==="delete"){
+    alert('The Dungeon you are currently in has been deleted! You are being moved back to the lobby!');
+    document.location = '/';
+  }
 }
 
 // Send a chat to the server and display it on client
