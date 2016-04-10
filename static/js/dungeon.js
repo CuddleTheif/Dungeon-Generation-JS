@@ -60,9 +60,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			loadGame();
 			
 		};
-    	topImg.src = name+'/dungeon_top.png';
+    	topImg.src = 'dungeon_top.png';
     };
-    backImg.src = name+'/dungeon_back.png';
+    backImg.src = 'dungeon_back.png';
     
 	// Create the sprite for the player
 	var playerImg = new Image();
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	  // Mark that the player has been loaded
 	  loadGame();
     };
-    playerImg.src = '../images/placeholder_player.png';
+    playerImg.src = '/images/placeholder_player.png';
 }, false);
 
 // After everything has been loaded update the viewport add the layers to the screen

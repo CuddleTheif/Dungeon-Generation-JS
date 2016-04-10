@@ -3,3 +3,5 @@ ngrok.exe
 *.log
 *.sh
 pid
+*.swo
+*.swp

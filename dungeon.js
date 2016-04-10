@@ -270,73 +270,73 @@
 						var topground = topimage.batch();
 						
 						// Create methods for determining neighbor tiles
-			    		var isWallNeighbor = function(x, y){
-			    												return x>=0 && y>=0 && x<grid.length && y<grid[x].length && 
-			    													grid[x][y]==1;
-			    											};
-			    		var isRoofNeighbor = function(x, y){
-			    												return x<0 || y<0 || x>=grid.length || y>=grid[x].length ||
-			    													grid[x][y]==0 || grid[x][y+1]<=1;
-			    											};
-				    	var isRoomNeighbor = function(x, y){
-				    											return grid[x][y]==2;
-				    										};
-				    	var isPathNeighbor = function(x, y){
-				    											return grid[x][y]==3;
-				    										};
-				    	
-				    	// Create function for counting tiles drawn
-				    	var tileCount = 0;
-				    	var realTileCount = 0;
-				    	var countTile = function(){
-				    		if(++tileCount>=realTileCount){
-				    			// Save the created images to the server
-				    			var loadedBuffer;
-					    		background.toBuffer('png', function(err, buffer){
-					    			if (err) throw err;
-					    			if(!loadedBuffer)
-					    				loadedBuffer = buffer;
-					    			else if(callback)
-					    				callback(buffer, loadedBuffer);
-					    		});
-					    		topground.toBuffer('png', function(err, buffer){
-					    			if (err) throw err;
-					    			if(!loadedBuffer)
-					    				loadedBuffer = buffer;
-					    			else if(callback)
-					    				callback(loadedBuffer, buffer);
-					    		});
-				    		}
-				    	};
-				    	
-				    	// Draw the tiles in the grid
-			    		for(var x=0;x<grid.length;x++){
-			    			for(var y=0;y<grid[x].length;y++){
-			    				realTileCount++;
-			    				switch(grid[x][y]){
-			    					case 0: // nothing = roof tile
-			    						addTile(topground, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
-			    						if(y>0 && grid[x][y-1]!=0){
-			    							realTileCount++;
-			    							addTile(topground, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
-			    						}
-			    						break;
-			    					case 1: // wall tile
-			    						addTile(background, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, isWallNeighbor, false, countTile);
-			    						if(y>0 && grid[x][y-1]!=0){
-			    							realTileCount++;
-			    							addTile(topground, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
-			    						}
-			    						break;
-			    					case 2: // room tile
-			    						addTile(background, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, isRoomNeighbor, true, countTile);
-			    						break;
-			    					case 3: // path tile
-			    						addTile(background, {x:x,y:y}, {x:pathTile.x*64, y:pathTile.y*96}, floorTileSheet, isPathNeighbor, true, countTile);
-			    						break;
-			    				}
-			    			}
-			    		}
+					var isWallNeighbor = function(x, y){
+															return x>=0 && y>=0 && x<grid.length && y<grid[x].length && 
+																grid[x][y]==1;
+														};
+					var isRoofNeighbor = function(x, y){
+															return x<0 || y<0 || x>=grid.length || y>=grid[x].length ||
+																grid[x][y]==0 || grid[x][y+1]<=1;
+														};
+					var isRoomNeighbor = function(x, y){
+															return grid[x][y]==2;
+														};
+					var isPathNeighbor = function(x, y){
+															return grid[x][y]==3;
+														};
+					
+					// Create function for counting tiles drawn
+					var tileCount = 0;
+					var realTileCount = 0;
+					var countTile = function(){
+						if(++tileCount>=realTileCount){
+							// Save the created images to the server
+							var loadedBuffer;
+							background.toBuffer('png', function(err, buffer){
+								if (err) throw err;
+								if(!loadedBuffer)
+									loadedBuffer = buffer;
+								else if(callback)
+									callback(buffer, loadedBuffer);
+							});
+							topground.toBuffer('png', function(err, buffer){
+								if (err) throw err;
+								if(!loadedBuffer)
+									loadedBuffer = buffer;
+								else if(callback)
+									callback(loadedBuffer, buffer);
+							});
+						}
+					};
+					
+					// Draw the tiles in the grid
+					for(var x=0;x<grid.length;x++){
+						for(var y=0;y<grid[x].length;y++){
+							realTileCount++;
+							switch(grid[x][y]){
+								case 0: // nothing = roof tile
+									addTile(topground, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
+									if(y>0 && grid[x][y-1]!=0){
+										realTileCount++;
+										addTile(topground, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
+									}
+									break;
+								case 1: // wall tile
+									addTile(background, {x:x,y:y}, {x:wallTile.x*64, y:wallTile.y*160+64}, wallTileSheet, isWallNeighbor, false, countTile);
+									if(y>0 && grid[x][y-1]!=0){
+										realTileCount++;
+										addTile(topground, {x:x,y:y-1}, {x:wallTile.x*64, y:wallTile.y*160}, wallTileSheet, isRoofNeighbor, true, countTile);
+									}
+									break;
+								case 2: // room tile
+									addTile(background, {x:x,y:y}, {x:roomTile.x*64, y:roomTile.y*96}, floorTileSheet, isRoomNeighbor, true, countTile);
+									break;
+								case 3: // path tile
+									addTile(background, {x:x,y:y}, {x:pathTile.x*64, y:pathTile.y*96}, floorTileSheet, isPathNeighbor, true, countTile);
+									break;
+							}
+						}
+					}
 						
 					});
 				});
