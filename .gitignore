@@ -5,3 +5,4 @@ ngrok.exe
 pid
 *.swo
 *.swp
+static/dungeon/*
