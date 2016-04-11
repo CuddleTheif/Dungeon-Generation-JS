@@ -36,7 +36,7 @@ function createDungeon(){
 				var xhttp2 = new XMLHttpRequest();
 				xhttp2.onreadystatechange = function() {
 					if (xhttp2.readyState == 4 && xhttp2.status == 200) {
-						document.location = "/dungeon/"+form.elements["name"].value;
+						document.location = "/dungeon/"+form.elements["name"].value.toLowerCase();
 					}
 				};
 				xhttp2.open("POST", "/create", true);

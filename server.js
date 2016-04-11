@@ -9,6 +9,7 @@ var server = require('http').createServer(),
 		url = require('url');
 var app = express();
 var pages = [];
+var tasks = [];
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -42,7 +43,7 @@ app.post('/status', function(req, res) {
 // Post for vaildating dungeon params
 app.post('/attempt', function(req, res) {
 	var data = req.body;
-  var name = data.name.toLowerCase().replace(/ /g, '_');
+  var name = data.name.toLowerCase();
 	if(pages[name]){
 		res.json({stats: -1, message: 'That dungeon already exists! Please delete the one with the same name before making a new one!'});
 	}
@@ -54,25 +55,32 @@ app.post('/attempt', function(req, res) {
 	}
 });
 
+var newPage = cp.fork('./createPage.js');
+newPage.on('message', function(data) {
+  
+  // Store the page data
+  var name = data.name, dungeon = data.dungeon;
+  pages[name].dungeon = dungeon;
+  for(var i=0;i<pages[name].waiting.length;i++)
+    pages[name].waiting[i].send("DONE");
+  pages[name].loading = false;
+
+
+});
+
 // Post for creating a dungeon page
 app.post('/create', function(req, res) {
 	var data = req.body;
-  var name = data.name.toLowerCase().replace(/ /g, '_');
-	var newPage = cp.fork('./createPage.js', [name, data.width, data.height, data.numRooms, data.roomMinWidth, data.roomMaxWidth, data.roomMinHeight, data.roomMaxHeight]);
+  var name = data.name.toLowerCase();
+	newPage.send({name:name, width:parseInt(data.width), height:parseInt(data.height), numRooms:parseInt(data.numRooms), roomMinWidth:parseInt(data.roomMinWidth), roomMaxWidth:parseInt(data.roomMaxWidth), roomMinHeight:parseInt(data.roomMinHeight), roomMaxHeight:parseInt(data.roomMaxHeight)}); 
 	pages[name] = {loading:true, name:data.name, area:parseInt(data.width)*parseInt(data.height), players:[], waiting:[]};
-	newPage.on('message', function(dungeon) {
-		pages[name].dungeon = dungeon;
-	  for(var i=0;i<pages[name].waiting.length;i++)
-      pages[name].waiting[i].send("DONE");
-	  pages[name].loading = false;
-	});
   res.send();
 });
 
 // Post for deleting a dungeon page
 app.post('/delete', function(req, res) {
   var data = req.body;
-  var name = data.name.toLowerCase().replace(/ /g, '_');
+  var name = data.name.toLowerCase();
   if(pages[name] && !pages[name].loading){
     cp.fork('./deletePage.js', [name]);
     for(var i=0;i<pages[name].players.length;i++)
