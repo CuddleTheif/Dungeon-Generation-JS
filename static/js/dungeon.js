@@ -175,8 +175,8 @@ function updateViewport(){
 	if(backgroundImage==null || topgroundImage==null)
 		return;
 	
-	var x = player.x()-virtualSize.x/2;
-	var y = player.y()-virtualSize.y/2;
+	var x = player.x()-dungeonStage.width()/dungeonStage.scale().x/2;
+	var y = player.y()-dungeonStage.height()/dungeonStage.scale().y/2;
 	
 	backgroundImage.crop({
 						x:x,
