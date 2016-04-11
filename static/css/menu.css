@@ -34,3 +34,15 @@ button {
   color: inherit;
   background-color: #5000a0;
 }
+
+a {
+  color: #00AA00;
+}
+
+a:hover {
+  color: #00FF00;
+}
+
+a:visited {
+  color: #005500;
+}
