@@ -34,7 +34,11 @@ app.post('/status', function(req, res) {
     status.url.push('/dungeon/'+name);
     status.name.push(pages[name].name);
     status.area.push(pages[name].area);
-    status.players.push(pages[name].players.length);
+    var count = 0;
+    for(var i=0;i<pages[name].players.length;i++)
+      if(pages[name].players[i]!=null)
+        count++;
+    status.players.push(count);
     status.loading.push(pages[name].loading);  
   }
   res.send(status);
