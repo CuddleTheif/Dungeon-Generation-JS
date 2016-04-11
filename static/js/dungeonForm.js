@@ -8,7 +8,7 @@ function createDungeon(){
     return false;
 	}
 	
-	if(form.elements["roomMinWidth"].value>=form.elements["roomMaxWidth"].value || form.elements["roomMinHeight"].value>=form.elements["roomMaxHeight"].value ){
+	if(parseInt(form.elements["roomMinWidth"].value)>=parseInt(form.elements["roomMaxWidth"].value) || parseInt(form.elements["roomMinHeight"].value)>=parseInt(form.elements["roomMaxHeight"].value)){
 		alert("The room's min sizes must be less than their respective max size!");
 		setFormDisabled(form, false);
     return false;
@@ -16,6 +16,7 @@ function createDungeon(){
 
   if(form.elements["name"].value!=form.elements["name"].value.match(/[\w0-9]+/)){
     alert("The dungeon's name can only be letters, numbers, and underscores!");
+    setFormDisabled(form, false);
     return false;
   }
 	
