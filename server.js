@@ -88,7 +88,8 @@ app.post('/delete', function(req, res) {
   if(pages[name] && !pages[name].loading){
     cp.fork('./deletePage.js', [name]);
     for(var i=0;i<pages[name].players.length;i++)
-      pages[name].players[i].send({action: "delete"});
+      if(pages[name].players[i]!=null)
+        pages[name].players[i].send(JSON.stringify({action: "disconnect"}));
     pages[name] = null;
     res.send({status: 1, message:''});
   }
@@ -140,11 +141,13 @@ wss.on('connection', function(ws){
 		});
 
 		ws.on('close', function close(e, f) {
-			pages[name].players[id] = null;
-			wss.clients.forEach(function each(client) {
-				if(client!=ws && pages[name].players.indexOf(client)!=-1)
-					client.send(JSON.stringify({action:'delete', id:id}));
-			});
+			if(pages[name]){
+				pages[name].players[id] = null;
+				wss.clients.forEach(function each(client) {
+					if(client!=ws && pages[name].players.indexOf(client)!=-1)
+						client.send(JSON.stringify({action:'delete', id:id}));
+				});
+			}
 		});
 
 	}

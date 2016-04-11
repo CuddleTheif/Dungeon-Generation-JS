@@ -135,6 +135,9 @@ function loadGame(){
 	if(!gameLoaded)
 		gameLoaded = true;
 	else{
+
+		// Connect to the server
+		connectToServer();
 		
 		// Create the stage and add all the layers
 		var scale = window.innerWidth/virtualSize.x*virtualSize.y < window.innerHeight ? window.innerHeight/virtualSize.y : window.innerWidth/virtualSize.x;
