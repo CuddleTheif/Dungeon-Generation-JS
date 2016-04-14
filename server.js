@@ -46,7 +46,7 @@ app.post('/status', function(req, res) {
 
 // Post for vaildating dungeon params
 app.post('/attempt', function(req, res) {
-	var data = req.body;
+  var data = req.body;
   var name = data.name.toLowerCase();
 	if(pages[name]){
 		res.json({stats: -1, message: 'That dungeon already exists! Please delete the one with the same name before making a new one!'});

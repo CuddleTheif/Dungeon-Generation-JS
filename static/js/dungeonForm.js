@@ -2,6 +2,11 @@ function createDungeon(){
 	var form = document.getElementById("dungeon-form");
 	setFormDisabled(form, true);
 	
+	if(!checkForm(form)){
+		setFormDisabled(form, false);
+		return false;
+	}
+	
 	if(form.elements["width"].value*form.elements["height"].value>45000){
 		alert('The area of the dungeon must be less than 45000!');
 		setFormDisabled(form, false);
@@ -74,4 +79,26 @@ function setFormDisabled(form, val){
 	form.elements["roomMaxHeight"].disabled = val;
 	form.elements["name"].disabled = val;
   document.getElementById("submit").disabled = val;
+}
+
+function checkForm(form){
+
+	for(var i=0;i<form.elements.length;i++){
+		if(form.elements[i].tagName=="INPUT"){
+			if(form.elements[i].required && !form.elements[i].value){
+				alert(form.elements[i].placeholder+' is required!');
+				return false;
+			}
+			if(form.elements[i].min && parseInt(form.elements[i].min)>parseInt(form.elements[i].value)){
+				alert(form.elements[i].placeholder+' must be at least '+form.elements[i].min);
+				return false;
+			}
+			if(form.elements[i].max && parseInt(form.elements[i].max)<parseInt(form.elements[i].value)){
+				alert(form.elements[i].placeholder+" can't be over "+form.elements[i].max);
+				return false;
+			}
+		}
+	}
+	
+	return true;
 }
