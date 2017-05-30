@@ -1,4 +1,5 @@
-var server = require('http').createServer(),
+var http = require('http'),
+		server = http.createServer(),
 		wss = new require('ws').Server({ server: server }),
 		express = require('express'),
 		app = express(),

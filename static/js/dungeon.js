@@ -1,5 +1,5 @@
 var dungeonStage, backgroundLayer, backgroundImage, characterLayer, topgroundLayer, topgroundImage, chatLayer, player, gameLoaded = false;
-var tileSize=32, virtualSize = {x:30*tileSize,y:17*tileSize};
+var tileSize=32, virtualSize = {x:30*tileSize,y:17*tileSize}, zoom = 1;
 
 // Gets a sprite's current width
 Konva.Sprite.prototype.getWidth = function(){
@@ -12,16 +12,17 @@ Konva.Sprite.prototype.getHeight = function(){
 }
 
 // Handle window resizing
-window.onresize = function(){
+function resize(){
 	if(dungeonStage!=null){
 		dungeonStage.width(window.innerWidth);
 		dungeonStage.height(window.innerHeight);
 		var scale = window.innerWidth/virtualSize.x*virtualSize.y < window.innerHeight ? window.innerHeight/virtualSize.y : window.innerWidth/virtualSize.x;
-		dungeonStage.scale({x:scale, y:scale});
+		dungeonStage.scale({x:scale*zoom, y:scale*zoom});
 		dungeonStage.draw();
 		updateViewport();
 	}
 }
+window.onresize = resize;
 
 // Create the basic grid with the player after the page has loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -140,18 +141,14 @@ function loadGame(){
 		connectToServer();
 		
 		// Create the stage and add all the layers
-		var scale = window.innerWidth/virtualSize.x*virtualSize.y < window.innerHeight ? window.innerHeight/virtualSize.y : window.innerWidth/virtualSize.x;
 		dungeonStage = new Konva.Stage({
-		  container: 'grid',
-		  width: window.innerWidth,
-		  height: window.innerHeight,
-      	  scale: {x:scale, y:scale}
+		  container: 'grid'
 		});
 		dungeonStage.add(backgroundLayer, characterLayer, topgroundLayer, chatLayer);
 		
 		// Load the animations, viewport, and server at the last step
 		loadAnimations();
-		updateViewport();
+		resize();
 		updateServer('move');
 	}
 }
@@ -172,7 +169,7 @@ function move(sprite, dir, distance) {
 	}
 }
 
-// Udate the player's viewport onto the player
+// Update the player's viewport onto the player
 function updateViewport(){
 	
 	if(backgroundImage==null || topgroundImage==null)
@@ -184,14 +181,14 @@ function updateViewport(){
 	backgroundImage.crop({
 						x:x,
 						y:y,
-						width:virtualSize.x,
-						height:virtualSize.y
+						width:virtualSize.x*(1/zoom),
+						height:virtualSize.y*(1/zoom)
 					});
 	topgroundImage.crop({
 						x:x,
 						y:y,
-						width:virtualSize.x,
-						height:virtualSize.y
+						width:virtualSize.x*(1/zoom),
+						height:virtualSize.y*(1/zoom)
 					});
 	
 	characterLayer.setX(-x);

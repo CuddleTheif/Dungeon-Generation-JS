@@ -63,6 +63,14 @@ function stopPlayer(){
 	updateServer('move');
 }
 
+// Zoom the view by the given value
+function changeZoom(change){
+  if(zoom+change>0.25 && zoom+change<2)
+    zoom += change;
+  resize();
+  updateViewport();
+}
+
 // Add Key input
 document.addEventListener('keydown', function(event) {
 	
@@ -75,6 +83,7 @@ document.addEventListener('keydown', function(event) {
 		}, 1);
 	}
 	
+  
 	if(CONTROLS[event.keyCode.toString()]!=null){
 		event.preventDefault();
 		addKeyToStack(event.keyCode);
@@ -118,6 +127,14 @@ document.addEventListener('keyup', function(event) {
     	event.preventDefault();
 		removeKeyFromStack(event.keyCode);
 	}
+  
+  if(event.keyCode==69){
+    changeZoom(.1);
+  }
+  else if(event.keyCode==81){
+    changeZoom(-.1);
+  }
+
 });
 ;
 function addKeyToStack(key){

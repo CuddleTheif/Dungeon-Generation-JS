@@ -1,8 +1,12 @@
 {
+  "scripts": {
+    "start": "node server.js"
+  },
   "name": "dungeon-generation",
   "description": "A dungeon game with generated dungeons",
   "version": "0.0.1",
   "main": "server.js",
+  "engines" : { "node" : "~5.10.0" },
   "dependencies": {
     "body-parser": "^1.15.0",
     "ejs": "^2.4.1",
