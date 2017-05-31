@@ -6,7 +6,7 @@
   "description": "A dungeon game with generated dungeons",
   "version": "0.0.1",
   "main": "server.js",
-  "engines" : { "node" : "~5.10.0" },
+  "engines" : { "node" : "5.10.0", "npm" : "3.8.5" },
   "dependencies": {
     "body-parser": "^1.15.0",
     "ejs": "^2.4.1",
